@@ -1,0 +1,2746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fourier Series Explorer — Interactive Signals &amp; Systems Lab</title>
+<meta name="description" content="Type any periodic or piecewise signal like in Desmos and watch its Fourier series build up: coefficients, sigma form, line spectrum, Gibbs phenomenon, Parseval's theorem and LTI filtering.">
+<meta name="theme-color" content="#070b16">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<style>
+:root{
+  --bg:#070b16; --bg2:#0b1122; --card:rgba(255,255,255,.035); --card2:rgba(255,255,255,.055);
+  --border:rgba(148,163,184,.14); --border2:rgba(148,163,184,.26);
+  --text:#e6ebf5; --muted:#8d99b3; --dim:#5d6982;
+  --accent:#8b5cf6; --accent2:#22d3ee; --accent3:#f472b6;
+  --f:#38bdf8; --s:#f472b6; --y:#fbbf24; --err:#f87171; --good:#34d399; --warn:#fbbf24;
+  --radius:16px; --shadow:0 10px 40px -12px rgba(0,0,0,.6);
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(900px 600px at 0% 0%,rgba(139,92,246,.16),transparent 60%),
+             radial-gradient(800px 600px at 100% 100%,rgba(34,211,238,.10),transparent 60%),
+             radial-gradient(600px 400px at 70% 10%,rgba(244,114,182,.07),transparent 60%)}
+a{color:var(--accent2)}
+button{font-family:inherit}
+::selection{background:rgba(139,92,246,.45)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,.18);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,.32);background-clip:padding-box;border:2px solid transparent}
+
+/* ---------- Top bar ---------- */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;padding:12px 24px;
+  background:rgba(7,11,22,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(135deg,#8b5cf6,#22d3ee);box-shadow:0 6px 24px -6px rgba(139,92,246,.7)}
+.brand h1{font-size:18px;margin:0;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.brand h1 span{background:linear-gradient(90deg,#c4b5fd,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{margin:0;color:var(--muted);font-size:12px;white-space:nowrap}
+.top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all .18s ease;white-space:nowrap}
+.btn:hover{background:var(--card2);border-color:var(--border2);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:linear-gradient(135deg,rgba(139,92,246,.9),rgba(99,102,241,.9));border-color:transparent;box-shadow:0 6px 20px -8px rgba(139,92,246,.8)}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent}
+.btn.on{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.5);color:#6ee7b7;box-shadow:0 0 14px -4px rgba(52,211,153,.5)}
+.btn svg{width:15px;height:15px}
+.icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:all .15s;flex:none}
+.icon-btn:hover{background:rgba(248,113,113,.12);color:var(--err);border-color:rgba(248,113,113,.25)}
+
+/* ---------- Layout ---------- */
+.layout{display:grid;grid-template-columns:410px minmax(0,1fr);gap:20px;padding:20px 24px 40px;max-width:1800px;margin:0 auto}
+.side{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 100px);overflow:auto;display:flex;flex-direction:column;gap:16px;padding-right:4px}
+.main{display:flex;flex-direction:column;gap:20px;min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+@media (max-width:1250px){.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:1050px){.layout{grid-template-columns:minmax(0,1fr)}.side{position:static;max-height:none;overflow:visible}}
+@media (max-width:640px){.layout{padding:12px}.topbar{padding:10px 12px}.brand p{display:none}.top-actions .btn span{display:none}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:18px;position:relative;animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-h h2{font-size:15px;font-weight:700;margin:0;letter-spacing:-.01em}
+.card-h .sub{color:var(--muted);font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(139,92,246,.14);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)}
+.step-num{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;background:linear-gradient(135deg,rgba(139,92,246,.35),rgba(34,211,238,.25));border:1px solid rgba(139,92,246,.35)}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.mono{font-family:var(--mono)}
+
+/* ---------- Info tooltips ---------- */
+.info{position:relative;display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;font-size:10.5px;font-weight:700;
+  color:var(--muted);border:1px solid var(--border2);cursor:help;flex:none;font-style:normal}
+.info:hover{color:var(--text);border-color:var(--accent)}
+.info .tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);width:270px;padding:10px 12px;border-radius:10px;
+  background:#121a30;border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:400;line-height:1.5;box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transition:all .16s;z-index:100;text-align:left}
+.info:hover .tip{opacity:1;transform:translateX(-50%)}
+.info.right .tip{left:auto;right:-8px;transform:translateY(4px)}
+.info.right:hover .tip{transform:none}
+
+/* ---------- Presets ---------- */
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.preset{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 7px;border-radius:12px;border:1px solid var(--border);
+  background:rgba(2,6,23,.35);color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;transition:all .18s;text-align:center;line-height:1.2}
+.preset svg{width:100%;height:26px;overflow:visible}
+.preset svg path{fill:none;stroke:var(--f);stroke-width:1.6;stroke-linejoin:round;opacity:.85;transition:stroke .18s}
+.preset:hover{color:var(--text);border-color:rgba(56,189,248,.45);background:rgba(56,189,248,.07);transform:translateY(-1px)}
+.preset.active{color:var(--text);border-color:rgba(139,92,246,.6);background:rgba(139,92,246,.12)}
+.preset.active svg path{stroke:#c4b5fd}
+
+/* ---------- Pieces ---------- */
+.section-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
+.pieces{display:flex;flex-direction:column;gap:10px}
+.piece{border:1px solid var(--border);background:rgba(2,6,23,.4);border-radius:14px;padding:10px 10px 10px 12px;animation:pop .28s ease both;transition:border-color .2s}
+.piece:focus-within{border-color:rgba(139,92,246,.45)}
+.piece.bad{border-color:rgba(248,113,113,.5)}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.piece-top{display:flex;align-items:center;gap:8px}
+.piece-label{font-family:'Times New Roman',serif;font-style:italic;font-size:17px;white-space:nowrap;color:#c4b5fd;min-width:52px}
+.piece-label sub{font-style:normal;font-size:11px}
+.piece-expr{flex:1;min-width:0}
+.piece-int{display:flex;align-items:center;gap:8px;margin-top:8px;padding-left:2px}
+.int-lbl{font-size:12px;color:var(--muted);min-width:52px}
+.int-mid{font-family:'Times New Roman',serif;font-style:italic;font-size:16px;color:var(--muted);white-space:nowrap}
+.piece-int .mq-host{flex:1;min-width:0}
+.piece-err,.field-err{color:var(--err);font-size:12px;margin-top:6px;display:none;line-height:1.4}
+.piece-err.show,.field-err.show{display:block}
+
+/* MathQuill dark theme */
+.mq-host{display:block}
+.mq-editable-field{display:block!important;width:100%;min-height:40px;padding:7px 10px;border:1px solid var(--border)!important;border-radius:10px;
+  background:rgba(2,6,23,.6);color:var(--text);font-size:17px;transition:border-color .15s,box-shadow .15s;cursor:text;overflow-x:auto;overflow-y:hidden}
+.piece-int .mq-editable-field,.small-field .mq-editable-field{min-height:34px;font-size:15px;padding:5px 9px}
+.mq-editable-field.mq-focused{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(139,92,246,.28)!important}
+.mq-math-mode .mq-cursor{border-left:1.5px solid #e6ebf5!important;margin-left:-.75px!important}
+.mq-math-mode .mq-selection,.mq-editable-field .mq-selection .mq-non-leaf,.mq-math-mode .mq-selection .mq-non-leaf{background:rgba(139,92,246,.55)!important;color:#fff!important}
+.mq-math-mode .mq-empty{background:rgba(148,163,184,.18)!important}
+.mq-math-mode var,.mq-math-mode .mq-text-mode{color:inherit}
+.has-err .mq-editable-field,.plain-field.has-err{border-color:rgba(248,113,113,.65)!important}
+.plain-field{width:100%;height:38px;border-radius:10px;border:1px solid var(--border);background:rgba(2,6,23,.6);color:var(--text);padding:0 10px;font-family:var(--mono);font-size:14px}
+
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-btn{flex:1;justify-content:center;border-style:dashed;color:var(--muted)}
+.add-btn:hover{color:var(--text);border-color:var(--accent)}
+
+/* settings */
+.settings{display:grid;grid-template-columns:1fr;gap:12px;margin-top:6px}
+.setting{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.setting>label{font-size:12.5px;color:var(--muted);min-width:78px;display:flex;align-items:center;gap:6px}
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:rgba(2,6,23,.55);border:1px solid var(--border)}
+.seg button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;transition:all .15s}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:linear-gradient(135deg,rgba(139,92,246,.85),rgba(99,102,241,.85));color:#fff;box-shadow:0 2px 10px -2px rgba(139,92,246,.6)}
+.period-auto{font-family:var(--mono);font-size:13px;color:var(--text);padding:5px 10px;border-radius:8px;background:rgba(2,6,23,.4);border:1px solid var(--border)}
+.small-field{flex:1;min-width:120px}
+
+.status{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.note{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;padding:8px 10px;border-radius:10px;line-height:1.45}
+.note.info-n{background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.22);color:#a5f3fc}
+.note.warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);color:#fde68a}
+.note.error{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);color:#fecaca}
+.note .ic{flex:none;font-weight:700}
+
+.cheat{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px;margin-top:4px}
+.cheat kbd,.kbd{font-family:var(--mono);font-size:11.5px;background:rgba(2,6,23,.7);border:1px solid var(--border2);border-bottom-width:2px;border-radius:6px;padding:1px 6px;color:#e2e8f0;white-space:nowrap}
+.cheat span{color:var(--muted)}
+
+/* ---------- Plot card ---------- */
+.plot-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:rgba(2,6,23,.4);
+  color:var(--muted);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .16s;user-select:none}
+.chip .sw{width:14px;height:3px;border-radius:2px;background:currentColor;opacity:.5}
+.chip:hover{color:var(--text);border-color:var(--border2)}
+.chip.on{color:var(--text);border-color:var(--border2);background:rgba(255,255,255,.06)}
+.chip.on .sw{opacity:1}
+.chip.disabled{opacity:.35;pointer-events:none}
+.toolbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.plot-wrap{position:relative;display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.plot-wrap.split{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:800px){.plot-wrap.split{grid-template-columns:minmax(0,1fr)}}
+.plot-box{position:relative;height:440px;border-radius:12px;overflow:hidden;background:rgba(2,6,23,.55);border:1px solid var(--border)}
+.plot-wrap.split .plot-box{height:400px}
+@media (max-width:640px){.plot-box{height:320px}}
+.plot-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.plot-box canvas.grabbing{cursor:grabbing}
+.plot-title{position:absolute;left:12px;top:10px;font-size:12px;font-weight:600;color:var(--muted);pointer-events:none;background:rgba(2,6,23,.6);padding:2px 8px;border-radius:6px}
+.readout{position:absolute;right:10px;top:10px;pointer-events:none;background:rgba(10,15,30,.85);border:1px solid var(--border2);border-radius:10px;padding:7px 10px;
+  font-family:var(--mono);font-size:12px;line-height:1.6;opacity:0;transition:opacity .12s;min-width:150px;backdrop-filter:blur(6px)}
+.readout.show{opacity:1}
+.readout .row{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.readout .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.plot-hint{position:absolute;left:12px;bottom:8px;font-size:11px;color:var(--dim);pointer-events:none}
+.stale-overlay{position:absolute;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:16px;pointer-events:none;z-index:3}
+.stale .stale-overlay{display:flex}
+.stale .plot-box canvas{filter:saturate(.3) brightness(.7)}
+.stale-overlay span{background:rgba(127,29,29,.85);color:#fecaca;font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid rgba(248,113,113,.5)}
+.harm-legend{display:none;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.harm-legend.show{display:flex}
+.harm-legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+/* N control */
+.ncontrol{display:grid;grid-template-columns:auto auto minmax(140px,1fr) auto auto;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(139,92,246,.10),rgba(34,211,238,.06));border:1px solid rgba(139,92,246,.25)}
+@media (max-width:760px){.ncontrol{grid-template-columns:auto 1fr auto}.ncontrol .nslider-wrap{grid-column:1/-1;order:5}}
+.nlabel{display:flex;flex-direction:column;line-height:1.15}
+.nlabel b{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.nvalue{font-family:var(--mono);font-size:24px;font-weight:600;background:linear-gradient(90deg,#f9a8d4,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent;min-width:84px}
+.nbtns{display:flex;gap:6px}
+.round-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border2);background:rgba(2,6,23,.5);color:var(--text);font-size:18px;cursor:pointer;display:grid;place-items:center;transition:all .15s}
+.round-btn:hover{border-color:var(--accent);background:rgba(139,92,246,.15)}
+.round-btn.play{background:linear-gradient(135deg,#8b5cf6,#6366f1);border-color:transparent;box-shadow:0 4px 16px -4px rgba(139,92,246,.8)}
+.round-btn.play:hover{filter:brightness(1.12)}
+.round-btn svg{width:16px;height:16px}
+.nslider-wrap{position:relative}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;outline:none;cursor:pointer;
+  background:linear-gradient(90deg,#f472b6 0%,#8b5cf6 var(--p,10%),rgba(148,163,184,.2) var(--p,10%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid #8b5cf6;box-shadow:0 0 0 4px rgba(139,92,246,.25);transition:transform .12s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.12)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:4px solid #8b5cf6;box-shadow:0 0 0 4px rgba(139,92,246,.25)}
+.nopts{display:flex;gap:8px;align-items:center}
+select,.num-input{height:34px;border-radius:9px;border:1px solid var(--border2);background:rgba(2,6,23,.6);color:var(--text);font-family:inherit;font-size:12.5px;padding:0 8px;cursor:pointer}
+.num-input{width:68px;font-family:var(--mono);cursor:text}
+select:focus,.num-input:focus{outline:none;border-color:var(--accent)}
+
+.stats-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+@media (max-width:900px){.stats-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{padding:10px 12px;border-radius:12px;background:rgba(2,6,23,.4);border:1px solid var(--border);min-width:0}
+.stat .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px}
+.stat .v{font-family:var(--mono);font-size:17px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .d{font-size:11.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:5px;border-radius:999px;background:rgba(148,163,184,.15);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#34d399);border-radius:999px;transition:width .25s ease}
+
+/* ---------- Math panels ---------- */
+.math-block{padding:12px 14px;border-radius:12px;background:rgba(2,6,23,.4);border:1px solid var(--border);overflow-x:auto;overflow-y:hidden;margin-bottom:10px}
+.math-block:last-child{margin-bottom:0}
+.math-block .lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.math-block .katex-display{margin:.35em 0}
+.math-block .katex{font-size:1.08em}
+.math-line{padding:3px 0}
+.res-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0}
+.tag{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+.tag.exact{background:rgba(52,211,153,.12);color:#6ee7b7;border:1px solid rgba(52,211,153,.3)}
+.tag.numeric{background:rgba(251,191,36,.1);color:#fde68a;border:1px solid rgba(251,191,36,.3)}
+.tabs{display:inline-flex;padding:3px;border-radius:10px;background:rgba(2,6,23,.55);border:1px solid var(--border)}
+.tabs button{border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tabs button.on{background:rgba(255,255,255,.09);color:var(--text)}
+.tabs button:hover{color:var(--text)}
+.expanded{font-size:.98em}
+.conv-note{font-size:12px;color:var(--muted);margin-top:8px}
+
+/* spectrum / convergence */
+.chart-box{position:relative;height:250px;border-radius:12px;overflow:hidden;background:rgba(2,6,23,.55);border:1px solid var(--border)}
+.chart-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.chart-tip{position:absolute;pointer-events:none;background:rgba(10,15,30,.92);border:1px solid var(--border2);border-radius:8px;padding:6px 9px;font-family:var(--mono);font-size:11.5px;opacity:0;transition:opacity .1s;white-space:nowrap;z-index:2}
+.chart-tip.show{opacity:1}
+.kv{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.sym-chip{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:12px;background:rgba(2,6,23,.4);border:1px solid var(--border)}
+.sym-chip .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;font-weight:700;font-size:13px}
+.sym-chip b{display:block;font-size:13px}
+.sym-chip span{font-size:12px;color:var(--muted)}
+
+/* table */
+.table-wrap{max-height:380px;overflow:auto;border-radius:12px;border:1px solid var(--border);background:rgba(2,6,23,.4)}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+thead th{position:sticky;top:0;background:#0e1529;color:var(--muted);font-weight:600;text-align:right;padding:9px 12px;border-bottom:1px solid var(--border2);font-family:Inter,sans-serif;font-size:12px;white-space:nowrap;z-index:1}
+tbody td{padding:5px 12px;text-align:right;border-bottom:1px solid rgba(148,163,184,.06);white-space:nowrap;transition:opacity .15s}
+th:first-child,td:first-child{text-align:center;color:#c4b5fd}
+tbody tr:hover td{background:rgba(139,92,246,.07)}
+td.z{color:var(--dim)}
+
+/* LTI */
+.lti-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px;align-items:start}
+@media (max-width:900px){.lti-grid{grid-template-columns:minmax(0,1fr)}}
+.ctrl{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.ctrl>label{font-size:12px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.ctrl>label span{font-family:var(--mono);color:var(--text);font-weight:500}
+.ctrl select{width:100%}
+
+/* theory */
+details.theory{border:1px solid var(--border);border-radius:12px;background:rgba(2,6,23,.35);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+details.theory[open]{border-color:rgba(139,92,246,.35)}
+details.theory summary{cursor:pointer;padding:12px 14px;font-weight:600;font-size:13.5px;list-style:none;display:flex;align-items:center;gap:10px;user-select:none}
+details.theory summary::-webkit-details-marker{display:none}
+details.theory summary::after{content:"+";margin-left:auto;color:var(--muted);font-size:18px;transition:transform .2s}
+details.theory[open] summary::after{transform:rotate(45deg)}
+details.theory .body{padding:0 16px 14px;color:#cbd5e1;font-size:13.5px;overflow-x:auto}
+details.theory .body p{margin:.5em 0}
+.theory-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 14px}
+@media (max-width:1000px){.theory-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* modal + toast */
+.modal-bg{position:fixed;inset:0;background:rgba(2,6,23,.7);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex;animation:fade .2s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{width:min(760px,100%);max-height:88vh;overflow:auto;background:#0d1426;border:1px solid var(--border2);border-radius:18px;padding:22px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8);animation:rise .25s ease}
+.modal h3{margin:0 0 4px;font-size:18px}
+.syntax-table{width:100%;border-collapse:collapse;margin-top:14px;font-family:Inter,sans-serif}
+.syntax-table td,.syntax-table th{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;font-size:13px;white-space:normal}
+.syntax-table th{color:var(--muted);font-size:12px;position:static;background:none}
+.syntax-table td:first-child{text-align:left;color:inherit}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#13203a;border:1px solid var(--border2);color:var(--text);padding:10px 16px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:300;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:10px 0 30px}
+.perf{font-family:var(--mono);font-size:11px;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-6 3.5-6 5 0s3.5 6 5 0 3.5-6 5 0 3.5 6 5 0"/></svg>
+    </div>
+    <div>
+      <h1><span>Fourier Series</span> Explorer</h1>
+      <p>Interactive Signals &amp; Systems Lab</p>
+    </div>
+  </div>
+  <nav class="top-actions">
+    <button class="btn" id="btnHelp" title="How to type functions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg><span>How to type</span></button>
+    <button class="btn" id="btnTheory" title="Jump to theory notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg><span>Theory</span></button>
+    <button class="btn primary" id="btnShare" title="Copy a link that reproduces this exact setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span>Share link</span></button>
+  </nav>
+</header>
+
+<main class="layout">
+  <!-- ================= SIDE PANEL ================= -->
+  <aside class="side">
+    <section class="card" id="signalCard" aria-labelledby="sigTitle">
+      <div class="card-h"><span class="step-num">1</span><h2 id="sigTitle">Define your signal</h2>
+        <i class="info right">i<span class="tip">Define <b>one period</b> of the signal. Add several pieces for a piecewise definition. The period T is the total width of the pieces (or set it yourself). The signal is then repeated forever in both directions.</span></i>
+      </div>
+
+      <div class="section-label">Presets</div>
+      <div class="presets" id="presets"></div>
+
+      <div class="section-label">One period of <span id="lblFx">f(x)</span>
+        <i class="info">i<span class="tip">Type like in Desmos: <b>x^2</b>, <b>sin x</b>, <b>pi</b>, <b>/</b> for fractions, <b>|x|</b>, <b>sqrt</b>. You can even type inline piecewise braces: <b>{x&lt;0: -1, 1}</b>. Press <b>Enter</b> to jump to the next box.</span></i>
+      </div>
+      <div class="pieces" id="pieces"></div>
+      <div class="add-row">
+        <button class="btn add-btn" id="btnAddPiece"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add piece</button>
+      </div>
+
+      <div class="section-label">Settings</div>
+      <div class="settings">
+        <div class="setting">
+          <label>Period T <i class="info">i<span class="tip"><b>Auto</b>: T = (right end of last piece) − (left end of first piece).<br><b>Custom</b>: choose a larger T; f = 0 on the uncovered part of the period (handy for pulse trains).</span></i></label>
+          <div class="seg" id="periodSeg"><button data-v="auto" class="on">Auto</button><button data-v="custom">Custom</button></div>
+          <span class="period-auto" id="periodAuto">T = 2π</span>
+          <div class="small-field" id="periodFieldWrap" style="display:none"><span class="mq-host" id="periodField"></span></div>
+        </div>
+        <div class="field-err" id="periodErr"></div>
+        <div class="setting">
+          <label>Variable</label>
+          <div class="seg" id="varSeg"><button data-v="x" class="on">x</button><button data-v="t">t</button></div>
+          <span class="muted small">Both letters are always accepted when typing</span>
+        </div>
+      </div>
+      <div class="status" id="status"></div>
+    </section>
+
+    <section class="card" aria-labelledby="quickTitle">
+      <div class="card-h"><h2 id="quickTitle">Quick typing guide</h2><button class="btn ghost" id="btnHelp2" style="margin-left:auto;height:28px">Full guide</button></div>
+      <div class="cheat">
+        <kbd>x^2</kbd><span>power — use → to leave the exponent</span>
+        <kbd>/</kbd><span>creates a fraction</span>
+        <kbd>pi</kbd><span>becomes π</span>
+        <kbd>sin x</kbd><span>sin, cos, tan, exp, ln, log, sqrt …</span>
+        <kbd>|x|</kbd><span>absolute value (or abs)</span>
+        <kbd>u(x) rect(x) tri(x)</kbd><span>step, rectangle, triangle</span>
+        <kbd>{x&lt;1: x, 1}</kbd><span>inline piecewise (Desmos style)</span>
+        <kbd>2x, 3sin x</kbd><span>implicit multiplication</span>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <section class="main">
+    <!-- Plot -->
+    <section class="card" id="plotCard" aria-labelledby="plotTitle">
+      <div class="card-h"><span class="step-num">2</span><h2 id="plotTitle">Time domain: f vs. its Fourier approximation S<sub>N</sub></h2>
+        <span class="perf" id="perf"></span>
+      </div>
+      <div class="plot-toolbar">
+        <div class="chips" id="chips">
+          <span class="chip on" data-k="f" style="color:var(--f)"><i class="sw"></i><span style="color:var(--text)" id="chipF">f(x)</span></span>
+          <span class="chip on" data-k="s" style="color:var(--s)"><i class="sw"></i><span style="color:var(--text)" id="chipS">S<sub>N</sub>(x)</span></span>
+          <span class="chip" data-k="harm" style="color:#a78bfa"><i class="sw"></i><span style="color:var(--text)">Harmonics</span></span>
+          <span class="chip" data-k="err" style="color:var(--err)"><i class="sw"></i><span style="color:var(--text)">Error</span></span>
+          <span class="chip on" data-k="mid" style="color:#e2e8f0"><i class="sw"></i><span style="color:var(--text)">Jump midpoints</span></span>
+          <span class="chip disabled" data-k="out" style="color:var(--y)"><i class="sw"></i><span style="color:var(--text)">LTI output y</span></span>
+        </div>
+        <div class="toolbar-right">
+          <div class="seg" id="layoutSeg"><button data-v="overlay" class="on">Overlay</button><button data-v="split">Side by side</button></div>
+          <button class="btn" id="btnAudio" title="Hear S_N as a 220 Hz audio tone — updates live as you change N or the LTI filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg><span id="audioLbl">Listen</span></button>
+          <button class="btn" id="btnFit" title="Fit view (double-click on the plot also works)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Fit</button>
+        </div>
+      </div>
+      <div class="plot-wrap" id="plotWrap">
+        <div class="plot-box" id="boxMain"><canvas id="cvMain" aria-label="Plot of f and its Fourier partial sum"></canvas><div class="plot-title" id="titleMain" style="display:none"></div><div class="readout" id="roMain"></div><div class="plot-hint">drag to pan · scroll to zoom (Shift: x only, Alt: y only) · double-click to fit</div><div class="stale-overlay"><span>Fix the error to update — showing last valid signal</span></div></div>
+        <div class="plot-box" id="boxRight" style="display:none"><canvas id="cvRight" aria-label="Plot of the Fourier partial sum"></canvas><div class="plot-title" id="titleRight"></div><div class="readout" id="roRight"></div><div class="stale-overlay"><span>Fix the error to update</span></div></div>
+      </div>
+      <div class="harm-legend" id="harmLegend"></div>
+
+      <div class="ncontrol">
+        <div class="nlabel"><b>Harmonics N</b><span class="nvalue" id="nValue">N = 5</span></div>
+        <div class="nbtns">
+          <button class="round-btn" id="nMinus" title="N − 1 (← key)">−</button>
+          <button class="round-btn" id="nPlus" title="N + 1 (→ key)">+</button>
+        </div>
+        <div class="nslider-wrap"><input type="range" id="nSlider" min="0" max="50" value="5" aria-label="Number of harmonics N"></div>
+        <button class="round-btn play" id="nPlay" title="Animate N from 0 upward (Space)"><svg id="playIcon" viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+        <div class="nopts">
+          <input class="num-input" id="nInput" type="number" min="0" max="500" value="5" aria-label="Exact N">
+          <select id="nMax" title="Slider range (max N)"><option value="10">max 10</option><option value="25">max 25</option><option value="50" selected>max 50</option><option value="100">max 100</option><option value="200">max 200</option><option value="500">max 500</option></select>
+          <select id="nSpeed" title="Animation speed"><option value="2">slow</option><option value="5" selected>normal</option><option value="14">fast</option></select>
+        </div>
+      </div>
+
+      <div class="stats-strip">
+        <div class="stat"><div class="k">Power captured <i class="info">i<span class="tip">Parseval: the average power of f equals the sum of the powers of its harmonics. This shows how much of the total power the first N harmonics (plus DC) already carry.</span></i></div><div class="v" id="stCaptured">—</div><div class="bar"><i id="stCapturedBar"></i></div></div>
+        <div class="stat"><div class="k">RMS error <i class="info">i<span class="tip">√((1/T)∫|f − S<sub>N</sub>|² dx). Computed exactly from Parseval: it is the square root of the power that has not been captured yet. Always decreases as N grows.</span></i></div><div class="v" id="stRms">—</div><div class="d" id="stRmsRel">—</div></div>
+        <div class="stat" id="statGibbs" style="cursor:pointer" title="Hover to highlight the Gibbs overshoot peak on the plot"><div class="k">Gibbs overshoot <i class="info">i<span class="tip">Near a jump, S<sub>N</sub> overshoots by about 8.95% of the jump size, no matter how large N is. The overshoot only gets narrower, it never gets smaller. Hover this card to highlight the peak on the plot.</span></i></div><div class="v" id="stGibbs">—</div><div class="d" id="stGibbsD">—</div></div>
+        <div class="stat"><div class="k">Average power <i class="info">i<span class="tip">P = (1/T)∫|f|² dx over one period. Its square root is the RMS value of f.</span></i></div><div class="v" id="stPower">—</div><div class="d" id="stPowerD">—</div></div>
+      </div>
+    </section>
+
+    <div class="grid2">
+      <!-- Coefficients -->
+      <section class="card" aria-labelledby="coefTitle">
+        <div class="card-h"><span class="step-num">3</span><h2 id="coefTitle">Fourier coefficients</h2>
+          <i class="info">i<span class="tip">Convention used here: f = a₀ + Σ[aₙcos(nω₀x) + bₙsin(nω₀x)], so <b>a₀ is the DC (average) value</b>. Some textbooks write a₀/2 instead; then their a₀ is twice ours.</span></i>
+        </div>
+        <div class="math-block"><div class="lbl">Your signal</div><div id="mSignal"></div></div>
+        <div class="math-block"><div class="lbl">Definitions</div><div id="mGeneral"></div></div>
+        <div class="math-block"><div class="lbl">Applied to your pieces</div><div id="mPieces"></div></div>
+        <div class="math-block"><div class="lbl">Result <span class="tag" id="resTag"></span></div><div id="mResults"></div></div>
+      </section>
+
+      <!-- Series -->
+      <section class="card" aria-labelledby="seriesTitle">
+        <div class="card-h"><span class="step-num">4</span><h2 id="seriesTitle">Series representation</h2>
+          <div class="tabs" id="formTabs" style="margin-left:auto"><button data-v="trig" class="on">Trigonometric</button><button data-v="amp">Amplitude–phase</button><button data-v="exp">Complex exp.</button></div>
+        </div>
+        <div class="math-block"><div class="lbl">Σ form</div><div id="mSeries"></div></div>
+        <div class="math-block"><div class="lbl">Partial sum with N = <span id="nInline">5</span> (expanded)</div><div id="mExpanded" class="expanded"></div></div>
+        <div class="math-block"><div class="lbl">How the forms relate</div><div id="mRelations"></div></div>
+      </section>
+    </div>
+
+    <div class="grid2">
+      <!-- Spectrum -->
+      <section class="card" aria-labelledby="specTitle">
+        <div class="card-h"><span class="step-num">5</span><h2 id="specTitle">Line spectrum</h2>
+          <i class="info">i<span class="tip">Frequency-domain view: each stem is one harmonic at frequency nω₀. Bright stems are inside the current partial sum (n ≤ N). The two-sided |cₙ| spectrum of a real signal is always symmetric, and its phase is odd.</span></i>
+          <div class="tabs" id="specTabs" style="margin-left:auto"><button data-v="amp" class="on">Aₙ one-sided</button><button data-v="mag">|cₙ| two-sided</button><button data-v="phase">∠cₙ</button></div>
+        </div>
+        <div class="chart-box"><canvas id="cvSpec"></canvas><div class="chart-tip" id="specTip"></div></div>
+        <div class="conv-note" id="specNote"></div>
+      </section>
+
+      <!-- Convergence -->
+      <section class="card" aria-labelledby="convTitle">
+        <div class="card-h"><span class="step-num">6</span><h2 id="convTitle">Convergence &amp; symmetry</h2>
+          <i class="info right">i<span class="tip">Relative RMS error ‖f − S<sub>N</sub>‖ / ‖f‖ against N, on a log scale. How fast it drops tells you how smooth the signal is.</span></i>
+        </div>
+        <div class="chart-box" style="height:190px"><canvas id="cvConv"></canvas><div class="chart-tip" id="convTip"></div></div>
+        <div class="kv" id="analysis"></div>
+      </section>
+    </div>
+
+    <!-- LTI -->
+    <section class="card" aria-labelledby="ltiTitle">
+      <div class="card-h"><span class="step-num">7</span><h2 id="ltiTitle">Pass the signal through an LTI system</h2><span class="badge">Signals &amp; Systems</span>
+        <i class="info">i<span class="tip">Complex exponentials are eigenfunctions of LTI systems. Each harmonic cₙe^{jnω₀x} comes out as H(jnω₀)·cₙe^{jnω₀x}: it is scaled by |H| and phase-shifted by ∠H. Filtering just reshapes the line spectrum.</span></i>
+      </div>
+      <div class="lti-grid">
+        <div>
+          <div class="ctrl"><label>System H(jω)</label>
+            <select id="fltType">
+              <option value="none">None (no system)</option>
+              <option value="lpf1">RC low-pass (1st order)</option>
+              <option value="hpf1">RC high-pass (1st order)</option>
+              <option value="lpf2">Butterworth low-pass (2nd order)</option>
+              <option value="ilpf">Ideal low-pass</option>
+              <option value="ihpf">Ideal high-pass</option>
+              <option value="diff">Differentiator</option>
+              <option value="integ">Integrator</option>
+              <option value="delay">Time delay</option>
+            </select>
+          </div>
+          <div class="ctrl" id="ctrlWc"><label>Cutoff ω<sub>c</sub> <span id="wcVal">5 ω₀</span></label><input type="range" id="fltWc" min="-1" max="2" step="0.01" value="0.699"></div>
+          <div class="ctrl" id="ctrlT0" style="display:none"><label>Delay t<sub>0</sub> <span id="t0Val">0.25 T</span></label><input type="range" id="fltT0" min="0" max="1" step="0.005" value="0.25"></div>
+          <div class="math-block"><div id="mFilter"></div></div>
+          <div class="conv-note" id="fltNote"></div>
+        </div>
+        <div>
+          <div class="math-block"><div class="lbl">Output Fourier series</div><div id="mOutput"></div></div>
+          <div class="stats-strip" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0">
+            <div class="stat"><div class="k">Output power</div><div class="v" id="stOutP">—</div><div class="d" id="stOutPD">—</div></div>
+            <div class="stat"><div class="k">Fundamental gain</div><div class="v" id="stOutG">—</div><div class="d" id="stOutGD">—</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table -->
+    <section class="card" aria-labelledby="tableTitle">
+      <div class="card-h"><span class="step-num">8</span><h2 id="tableTitle">Coefficient table</h2><span class="sub">rows with n &gt; N are dimmed</span>
+        <button class="btn" id="btnCsv" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>n</th><th>aₙ</th><th>bₙ</th><th>cₙ = (aₙ − j bₙ)/2</th><th>|cₙ|</th><th>Aₙ = 2|cₙ|</th><th>∠cₙ (deg)</th></tr></thead>
+          <tbody id="coefBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Theory -->
+    <section class="card" id="theory" aria-labelledby="theoryTitle">
+      <div class="card-h"><span class="step-num">∑</span><h2 id="theoryTitle">Theory notes</h2><span class="sub">short, exam-oriented summaries</span></div>
+      <div class="theory-grid">
+        <div>
+          <details class="theory" open><summary>1 · What is a Fourier series?</summary><div class="body">
+            <p>Any reasonable periodic signal with period <span data-tex="T"></span> can be written as a sum of sinusoids whose frequencies are integer multiples of the <b>fundamental frequency</b> <span data-tex="\omega_0 = 2\pi/T"></span>:</p>
+            <div data-tex="f(@) = a_0 + \sum_{n=1}^{\infty}\big[a_n\cos(n\omega_0 @) + b_n\sin(n\omega_0 @)\big]" data-display></div>
+            <p><span data-tex="a_0"></span> is the DC level. The <span data-tex="n=1"></span> term is the fundamental, and <span data-tex="n\ge 2"></span> are the harmonics. Truncating at <span data-tex="n=N"></span> gives the partial sum <span data-tex="S_N(@)"></span>.</p>
+          </div></details>
+          <details class="theory"><summary>2 · Where do the coefficient formulas come from?</summary><div class="body">
+            <p>Sines and cosines at different harmonics are <b>orthogonal</b> over one period:</p>
+            <div data-tex="\int_T \cos(m\omega_0 @)\cos(n\omega_0 @)\,d@ = \tfrac{T}{2}\delta_{mn},\quad \int_T \sin(m\omega_0 @)\cos(n\omega_0 @)\,d@ = 0" data-display></div>
+            <p>Multiply the series by <span data-tex="\cos(m\omega_0 @)"></span> and integrate over one period. Every term vanishes except the <span data-tex="a_m"></span> term, which gives <span data-tex="a_m = \tfrac{2}{T}\int_T f(@)\cos(m\omega_0 @)\,d@"></span>. Each coefficient is the <b>projection</b> of <span data-tex="f"></span> onto one basis function, just like a dot product with a unit vector.</p>
+          </div></details>
+          <details class="theory"><summary>3 · Trigonometric ↔ amplitude–phase ↔ complex</summary><div class="body">
+            <div data-tex="c_n = \frac{1}{T}\int_T f(@)e^{-jn\omega_0 @}\,d@ = \frac{a_n - j b_n}{2},\qquad c_{-n} = c_n^{*}\ \text{(real } f)" data-display></div>
+            <div data-tex="f(@) = \sum_{n=-\infty}^{\infty} c_n e^{jn\omega_0 @} = a_0 + \sum_{n=1}^{\infty} A_n\cos(n\omega_0 @ + \varphi_n)" data-display></div>
+            <p>with <span data-tex="A_n = 2|c_n| = \sqrt{a_n^2+b_n^2}"></span> and <span data-tex="\varphi_n = \angle c_n = -\operatorname{atan2}(b_n,a_n)"></span>.</p>
+          </div></details>
+          <details class="theory"><summary>4 · Symmetry shortcuts</summary><div class="body">
+            <p><b>Even</b> <span data-tex="f(-@)=f(@)"></span> ⇒ <span data-tex="b_n = 0"></span> (cosine series). <b>Odd</b> <span data-tex="f(-@)=-f(@)"></span> ⇒ <span data-tex="a_0 = a_n = 0"></span> (sine series).</p>
+            <p><b>Half-wave symmetry</b> <span data-tex="f(@+T/2) = -f(@)"></span> ⇒ only odd harmonics <span data-tex="n = 1,3,5,\dots"></span>.</p>
+            <p><b>Time shift</b>: <span data-tex="f(@-@_0) \leftrightarrow c_n e^{-jn\omega_0 @_0}"></span>. Shifting changes the phases, and so whether the signal looks even or odd, but it <i>never</i> changes <span data-tex="|c_n|"></span>.</p>
+          </div></details>
+        </div>
+        <div>
+          <details class="theory" open><summary>5 · Convergence and the Gibbs phenomenon</summary><div class="body">
+            <p>If <span data-tex="f"></span> satisfies the Dirichlet conditions, <span data-tex="S_N"></span> converges to <span data-tex="f"></span> wherever <span data-tex="f"></span> is continuous. At a jump it converges to the <b>midpoint</b> <span data-tex="\tfrac{1}{2}[f(@^-)+f(@^+)]"></span>; these are the hollow dots on the plot.</p>
+            <p>Near a jump, <span data-tex="S_N"></span> overshoots by ≈ <b>8.95 %</b> of the jump size for every N. The ripple gets narrower but never smaller. This is the <b>Gibbs phenomenon</b>.</p>
+            <p>Decay rate of the coefficients: a jump in <span data-tex="f"></span> gives <span data-tex="\sim 1/n"></span>, a jump in <span data-tex="f'"></span> (a corner) gives <span data-tex="\sim 1/n^2"></span>, a jump in <span data-tex="f''"></span> gives <span data-tex="\sim 1/n^3"></span>, and so on.</p>
+          </div></details>
+          <details class="theory"><summary>6 · Parseval's theorem (power)</summary><div class="body">
+            <div data-tex="P = \frac{1}{T}\int_T |f(@)|^2\,d@ = \sum_{n=-\infty}^{\infty}|c_n|^2 = a_0^2 + \frac{1}{2}\sum_{n=1}^{\infty}\left(a_n^2+b_n^2\right)" data-display></div>
+            <p>Each harmonic carries its own power <span data-tex="A_n^2/2"></span>. The mean-square error of <span data-tex="S_N"></span> is exactly the power not yet included. <span data-tex="S_N"></span> is also the <b>best</b> approximation (in the mean-square sense) that uses harmonics up to N.</p>
+          </div></details>
+          <details class="theory"><summary>7 · Fourier series through LTI systems</summary><div class="body">
+            <p>An LTI system with frequency response <span data-tex="H(j\omega)"></span> maps <span data-tex="e^{j\omega @}\mapsto H(j\omega)e^{j\omega @}"></span>, so</p>
+            <div data-tex="x(@)=\sum c_n e^{jn\omega_0 @}\ \Longrightarrow\ y(@)=\sum H(jn\omega_0)\,c_n\,e^{jn\omega_0 @}" data-display></div>
+            <p>The output is periodic with the same <span data-tex="T"></span>. Only the harmonic amplitudes and phases change. An ideal low-pass filter with cutoff <span data-tex="\omega_c"></span> outputs exactly the partial sum <span data-tex="S_K"></span> with <span data-tex="K=\lfloor\omega_c/\omega_0\rfloor"></span>.</p>
+          </div></details>
+          <details class="theory"><summary>8 · How this tool computes</summary><div class="body">
+            <p>Integrals are evaluated numerically, piece by piece, with 8-point Gauss–Legendre quadrature. The pieces are split automatically at every jump or corner (inline piecewise conditions, |·|, u(·), rect, floor …), so the results are accurate to about 10⁻¹². All 500 harmonics are computed at once using a trigonometric recurrence.</p>
+            <p>When the coefficients follow a recognisable pattern (for example <span data-tex="\tfrac{4}{n\pi}"></span> for odd n), the exact formula is detected and shown with an <span class="tag exact">exact</span> tag.</p>
+          </div></details>
+        </div>
+      </div>
+    </section>
+
+    <footer>Fourier Series Explorer · built for Signals &amp; Systems students · <span class="perf">tip: ← → change N, Space plays the animation</span></footer>
+  </section>
+</main>
+
+<!-- Help modal -->
+<div class="modal-bg" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal">
+    <div style="display:flex;align-items:center;gap:10px"><h3 id="helpTitle">How to type functions</h3><button class="btn" id="helpClose" style="margin-left:auto">Close</button></div>
+    <p class="muted" style="margin:4px 0 0">The input boxes work like Desmos: math is formatted as you type.</p>
+    <table class="syntax-table">
+      <thead><tr><th>You type</th><th>You get</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="kbd">x^2</span></td><td data-tex="x^{2}"></td><td>Use → (right arrow) to leave the exponent</td></tr>
+        <tr><td><span class="kbd">1/2</span></td><td data-tex="\frac{1}{2}"></td><td><span class="kbd">/</span> builds a fraction</td></tr>
+        <tr><td><span class="kbd">pi</span></td><td data-tex="\pi"></td><td>also <span class="kbd">e</span> for Euler's number</td></tr>
+        <tr><td><span class="kbd">sqrt x</span></td><td data-tex="\sqrt{x}"></td><td><span class="kbd">nthroot</span> for other roots</td></tr>
+        <tr><td><span class="kbd">sin x</span>, <span class="kbd">cos(2x)</span></td><td data-tex="\sin x,\ \cos(2x)"></td><td>sin cos tan sec csc cot, arcsin…, sinh cosh tanh, exp, ln, log</td></tr>
+        <tr><td><span class="kbd">sin^2 x</span></td><td data-tex="\sin^2 x"></td><td><span class="kbd">sin^-1</span> means arcsin</td></tr>
+        <tr><td><span class="kbd">|x|</span> or <span class="kbd">abs(x)</span></td><td data-tex="|x|"></td><td>absolute value</td></tr>
+        <tr><td><span class="kbd">u(x-1)</span></td><td data-tex="u(x-1)"></td><td>unit step (also <span class="kbd">step</span>)</td></tr>
+        <tr><td><span class="kbd">rect(x)</span>, <span class="kbd">tri(x)</span></td><td data-tex="\operatorname{rect}(x),\ \operatorname{tri}(x)"></td><td>rect = 1 for |x| &lt; ½, tri = max(1−|x|, 0)</td></tr>
+        <tr><td><span class="kbd">sinc(x)</span>, <span class="kbd">sgn(x)</span></td><td data-tex="\operatorname{sinc}(x)"></td><td>normalised: sin(πx)/(πx)</td></tr>
+        <tr><td><span class="kbd">floor</span>, <span class="kbd">ceil</span>, <span class="kbd">mod(x,2)</span></td><td data-tex="\lfloor x\rfloor,\ x \bmod 2"></td><td>staircases and sawtooths</td></tr>
+        <tr><td><span class="kbd">{x&lt;1: x, 1}</span></td><td data-tex="\begin{cases}x & x<1\\ 1 & \text{otherwise}\end{cases}"></td><td>Desmos piecewise: first true condition wins, the last item is the default. Type <span class="kbd">&lt;=</span> for ≤</td></tr>
+        <tr><td><span class="kbd">2x</span>, <span class="kbd">3pi x</span></td><td data-tex="2x,\ 3\pi x"></td><td>implicit multiplication</td></tr>
+      </tbody>
+    </table>
+    <p class="muted small" style="margin-top:14px">Tips: press <span class="kbd">Enter</span> to jump to the next box. The variable can be <b>x</b> or <b>t</b>. Interval bounds accept constants like <span class="kbd">-pi</span>, <span class="kbd">pi/2</span> or <span class="kbd">2</span>.</p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- ======================================================================
+     CORE ENGINE (DOM-free): parser, compiler, quadrature, analysis
+     ====================================================================== -->
+<script id="core">
+window.FourierCore = (() => {
+'use strict';
+const PI = Math.PI, NMAX = 500;
+class ParseError extends Error {}
+
+/* ---------- runtime helpers available to compiled functions ---------- */
+const F = {
+  sec: x => 1 / Math.cos(x), csc: x => 1 / Math.sin(x), cot: x => 1 / Math.tan(x),
+  sgn: x => (x > 0 ? 1 : x < 0 ? -1 : 0),
+  u: x => (x >= 0 ? 1 : 0),
+  rect: x => { const a = Math.abs(x); return a < 0.5 ? 1 : (a === 0.5 ? 0.5 : 0); },
+  tri: x => { const a = Math.abs(x); return a < 1 ? 1 - a : 0; },
+  sinc: x => (x === 0 ? 1 : Math.sin(PI * x) / (PI * x)),
+  mod: (a, b) => ((a % b) + b) % b,
+  pow(a, b) {
+    if (a >= 0 || Number.isInteger(b)) return Math.pow(a, b);
+    for (let q = 3; q <= 15; q += 2) { const p = Math.round(b * q); if (Math.abs(b * q - p) < 1e-9) { const m = Math.pow(-a, b); return (p % 2 === 0) ? m : -m; } }
+    return NaN;
+  },
+  nroot(a, n) {
+    if (a >= 0) return Math.pow(a, 1 / n);
+    const r = Math.round(n); if (Math.abs(n - r) < 1e-12 && r % 2 !== 0) return -Math.pow(-a, 1 / n);
+    return NaN;
+  }
+};
+
+const FUNCS = {
+  sin: ['Math.sin', 1], cos: ['Math.cos', 1], tan: ['Math.tan', 1], sec: ['F.sec', 1], csc: ['F.csc', 1], cot: ['F.cot', 1],
+  arcsin: ['Math.asin', 1], arccos: ['Math.acos', 1], arctan: ['Math.atan', 1], asin: ['Math.asin', 1], acos: ['Math.acos', 1], atan: ['Math.atan', 1],
+  sinh: ['Math.sinh', 1], cosh: ['Math.cosh', 1], tanh: ['Math.tanh', 1],
+  exp: ['Math.exp', 1], ln: ['Math.log', 1], log: ['Math.log10', 1], sqrt: ['Math.sqrt', 1], abs: ['Math.abs', 1],
+  floor: ['Math.floor', 1], ceil: ['Math.ceil', 1], round: ['Math.round', 1],
+  sgn: ['F.sgn', 1], sign: ['F.sgn', 1], u: ['F.u', 1], step: ['F.u', 1], rect: ['F.rect', 1], tri: ['F.tri', 1], sinc: ['F.sinc', 1],
+  mod: ['F.mod', 2], min: ['Math.min', -1], max: ['Math.max', -1]
+};
+const INVERSE = { sin: 'arcsin', cos: 'arccos', tan: 'arctan' };
+const WORDS = Object.keys(FUNCS).filter(k => k.length > 1).concat(['pi']).sort((a, b) => b.length - a.length);
+
+/* ---------- tokenizer: accepts MathQuill LaTeX and plain text ---------- */
+function tokenize(src) {
+  const s = String(src).replace(/\u2212/g, '-').replace(/[\u00b7\u00d7]/g, '*').replace(/\u2264/g, '\\le ').replace(/\u2265/g, '\\ge ').replace(/\u03c0/g, '\\pi ');
+  const toks = []; let i = 0;
+  const push = (t, v) => toks.push(v === undefined ? { t } : { t, v });
+  while (i < s.length) {
+    const ch = s[i];
+    if (/\s/.test(ch)) { i++; continue; }
+    if (ch === '\\') {
+      let j = i + 1;
+      if (j < s.length && !/[a-zA-Z]/.test(s[j])) {
+        const c = s[j]; i = j + 1;
+        if (c === '{') push('pw('); else if (c === '}') push('pw)'); else if (c === '|') push('|');
+        else if (',;:! '.includes(c)) { /* spacing */ }
+        else throw new ParseError(`Unsupported symbol "\\${c}"`);
+        continue;
+      }
+      while (j < s.length && /[a-zA-Z]/.test(s[j])) j++;
+      const cmd = s.slice(i + 1, j); i = j;
+      switch (cmd) {
+        case 'left': case 'right': {
+          while (s[i] === ' ') i++;
+          let d = s[i];
+          if (d === '\\') {
+            const d2 = s[i + 1];
+            if (d2 === '{' || d2 === '}' || d2 === '|') { d = '\\' + d2; i += 2; }
+            else { let k = i + 1; while (k < s.length && /[a-zA-Z]/.test(s[k])) k++; d = '\\' + s.slice(i + 1, k); i = k; }
+          } else i++;
+          const L = cmd === 'left';
+          if (d === '(' || d === '[' || d === '\\lbrack') push('(');
+          else if (d === ')' || d === ']' || d === '\\rbrack') push(')');
+          else if (d === '|' || d === '\\vert' || d === '\\|') push(L ? 'abs(' : 'abs)');
+          else if (d === '\\{' || d === '\\lbrace') push('pw(');
+          else if (d === '\\}' || d === '\\rbrace') push('pw)');
+          else if (d === '\\lfloor') push('func', 'floor'), push('(');
+          else if (d === '\\rfloor' || d === '\\rceil') push(')');
+          else if (d === '\\lceil') push('func', 'ceil'), push('(');
+          else if (d === '.') { /* invisible delimiter */ }
+          else throw new ParseError(`Unsupported bracket "${d}"`);
+          break;
+        }
+        case 'frac': case 'dfrac': case 'tfrac': push('frac'); break;
+        case 'sqrt': push('sqrt'); break;
+        case 'nthroot': push('sqrt'); break;
+        case 'cdot': case 'times': case 'ast': push('op', '*'); break;
+        case 'div': push('op', '/'); break;
+        case 'pi': toks.push({ t: 'const', v: PI, name: 'π' }); break;
+        case 'le': case 'leq': case 'leqslant': push('cmp', '<='); break;
+        case 'ge': case 'geq': case 'geqslant': push('cmp', '>='); break;
+        case 'lt': push('cmp', '<'); break;
+        case 'gt': push('cmp', '>'); break;
+        case 'lfloor': push('func', 'floor'); push('('); break;
+        case 'lceil': push('func', 'ceil'); push('('); break;
+        case 'rfloor': case 'rceil': push(')'); break;
+        case 'quad': case 'qquad': case 'space': case 'thinspace': break;
+        case 'operatorname': case 'mathrm': case 'text': case 'textrm': case 'mathit': {
+          while (s[i] === ' ') i++;
+          if (s[i] !== '{') throw new ParseError(`Expected { after \\${cmd}`);
+          const close = s.indexOf('}', i);
+          if (close < 0) throw new ParseError('Missing }');
+          const name = s.slice(i + 1, close).trim(); i = close + 1;
+          if (FUNCS[name]) push('func', name);
+          else if (name === 'e') toks.push({ t: 'const', v: Math.E, name: 'e' });
+          else if (name === 'pi') toks.push({ t: 'const', v: PI, name: 'π' });
+          else if (name === 'x' || name === 't') push('var');
+          else throw new ParseError(`Unknown function "${name}"`);
+          break;
+        }
+        case 'exponentialE': toks.push({ t: 'const', v: Math.E, name: 'e' }); break;
+        case 'bmod': case 'mod': push('modop'); break;
+        default:
+          if (FUNCS[cmd]) push('func', cmd);
+          else throw new ParseError(`Unsupported command "\\${cmd}"`);
+      }
+      continue;
+    }
+    if (/[0-9.]/.test(ch)) {
+      const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
+      if (!m) throw new ParseError('Invalid number');
+      push('num', parseFloat(m[0])); i += m[0].length; continue;
+    }
+    if (/[a-zA-Z]/.test(ch)) {
+      let j = i; while (j < s.length && /[a-zA-Z]/.test(s[j])) j++;
+      const run = s.slice(i, j); i = j; let k = 0;
+      while (k < run.length) {
+        let matched = null;
+        for (const w of WORDS) if (run.startsWith(w, k)) { matched = w; break; }
+        if (matched) {
+          if (matched === 'pi') toks.push({ t: 'const', v: PI, name: 'π' }); else push('func', matched);
+          k += matched.length; continue;
+        }
+        const c = run[k++];
+        if (c === 'x' || c === 't') push('var');
+        else if (c === 'e') toks.push({ t: 'const', v: Math.E, name: 'e' });
+        else if (c === 'u') push('func', 'u');
+        else throw new ParseError(`Unknown symbol "${c}" — the variable must be x or t`);
+      }
+      continue;
+    }
+    i++;
+    switch (ch) {
+      case '+': case '-': case '*': case '/': push('op', ch); break;
+      case '^': case '_': case '(': case ')': case '{': case '}': case '[': case ']': case ',': case ':': case '|': push(ch); break;
+      case '<': case '>': if (s[i] === '=') { push('cmp', ch + '='); i++; } else push('cmp', ch); break;
+      case '=': push('cmp', '='); break;
+      case '!': throw new ParseError('Factorial (!) is not supported');
+      default: throw new ParseError(`Unexpected character "${ch}"`);
+    }
+  }
+  return fixBars(toks);
+}
+function fixBars(toks) {
+  const out = []; let depth = 0;
+  const ends = t => t && ['num', 'var', 'const', ')', ']', '}', 'abs)', 'pw)'].includes(t.t);
+  for (const t of toks) {
+    if (t.t === '|') {
+      const prev = out[out.length - 1];
+      if (depth > 0 && ends(prev)) { out.push({ t: 'abs)' }); depth--; } else { out.push({ t: 'abs(' }); depth++; }
+    } else out.push(t);
+  }
+  return out;
+}
+
+/* ---------- recursive-descent parser -> AST ---------- */
+function parseTokens(tokens) {
+  let i = 0;
+  const peek = () => tokens[i];
+  const is = (t, v) => { const k = tokens[i]; return !!k && k.t === t && (v === undefined || k.v === v); };
+  const next = () => tokens[i++];
+  const expect = (t, msg) => { if (!is(t)) throw new ParseError(msg); return next(); };
+  const startsAtom = k => !!k && ['num', 'var', 'const', 'func', '(', '[', '{', 'frac', 'sqrt', 'abs(', 'pw('].includes(k.t);
+
+  function expr() {
+    let l = term();
+    while (is('op', '+') || is('op', '-')) { const o = next().v; const r = term(); l = { k: 'bin', o, l, r }; }
+    return l;
+  }
+  function term() {
+    let l = unary();
+    for (;;) {
+      if (is('op', '*') || is('op', '/')) { const o = next().v; const r = unary(); l = { k: 'bin', o, l, r }; }
+      else if (is('modop')) { next(); const r = unary(); l = { k: 'call', f: 'mod', args: [l, r] }; }
+      else if (startsAtom(peek())) { const r = power(); l = { k: 'bin', o: '*', l, r }; }
+      else break;
+    }
+    return l;
+  }
+  function unary() {
+    if (is('op', '-')) { next(); return { k: 'neg', a: unary() }; }
+    if (is('op', '+')) { next(); return unary(); }
+    return power();
+  }
+  function power() {
+    const b = atom();
+    if (is('^')) { next(); const e = exponent(); return { k: 'pow', a: b, b: e }; }
+    if (is('_')) throw new ParseError('Subscripts are only supported on log (e.g. log_2)');
+    return b;
+  }
+  function exponent() {
+    if (is('{')) { next(); const e = expr(); expect('}', 'Missing } in exponent'); return e; }
+    if (is('op', '-')) { next(); return { k: 'neg', a: atom() }; }
+    return atom();
+  }
+  function group(what) {
+    expect('{', `Missing ${what}`);
+    if (is('}')) throw new ParseError(`The ${what} is empty`);
+    const e = expr(); expect('}', `Missing } after ${what}`); return e;
+  }
+  function atom() {
+    const k = peek();
+    if (!k) throw new ParseError('The expression ends unexpectedly — something is missing');
+    switch (k.t) {
+      case 'num': next(); return { k: 'num', v: k.v };
+      case 'const': next(); return { k: 'num', v: k.v, name: k.name };
+      case 'var': next(); return { k: 'var' };
+      case '(': case '[': {
+        next(); if (is(')') || is(']')) throw new ParseError('Empty parentheses ( )');
+        const e = expr();
+        if (!(is(')') || is(']'))) throw new ParseError('Missing closing parenthesis )');
+        next(); return e;
+      }
+      case '{': {
+        const start = i; next();
+        try { const e = expr(); if (is('}')) { next(); return e; } } catch (err) { /* fall through to piecewise */ }
+        i = start + 1; return piecewise('}');
+      }
+      case 'abs(': { next(); const e = expr(); expect('abs)', 'Missing closing | of the absolute value'); return { k: 'call', f: 'abs', args: [e] }; }
+      case 'frac': { next(); const n = group('numerator'); const d = group('denominator'); return { k: 'bin', o: '/', l: n, r: d }; }
+      case 'sqrt': {
+        next(); let idx = null;
+        if (is('[')) { next(); idx = expr(); expect(']', 'Missing ] in root index'); }
+        const a = is('{') ? group('radicand') : atom();
+        return idx ? { k: 'nroot', a, n: idx } : { k: 'call', f: 'sqrt', args: [a] };
+      }
+      case 'pw(': next(); return piecewise('pw)');
+      case 'func': return func();
+      case ')': case ']': throw new ParseError('Unexpected ) — check your parentheses');
+      case 'abs)': throw new ParseError('Unexpected | — check your absolute value bars');
+      case 'op': throw new ParseError(`Unexpected "${k.v}" — an operand is missing`);
+      case 'cmp': throw new ParseError('Comparisons (<, >, ≤, ≥) are only allowed inside piecewise braces { … }');
+      case ':': throw new ParseError('":" is only allowed inside piecewise braces, like {x<0: -1, 1}');
+      case ',': throw new ParseError('Unexpected comma');
+      case '^': throw new ParseError('"^" needs a base, e.g. x^2');
+      default: throw new ParseError('Unexpected symbol');
+    }
+  }
+  function implicitArg() {
+    let l = is('op', '-') ? (next(), { k: 'neg', a: power() }) : power();
+    while (startsAtom(peek()) && peek().t !== 'func') l = { k: 'bin', o: '*', l, r: power() };
+    return l;
+  }
+  function func() {
+    const name = next().v; let pw = null, base = null;
+    for (let g = 0; g < 2; g++) {
+      if (is('^') && !pw) { next(); pw = exponent(); }
+      else if (is('_') && !base) { next(); base = exponent(); }
+    }
+    if (base && name !== 'log') throw new ParseError(`Subscripts are not supported on ${name}`);
+    let args;
+    if (is('(') || is('[')) {
+      next(); if (is(')')) throw new ParseError(`${name}( ) is empty`);
+      args = [expr()];
+      while (is(',')) { next(); args.push(expr()); }
+      if (!(is(')') || is(']'))) throw new ParseError(`Missing ) after ${name}(`);
+      next();
+    } else {
+      if (!startsAtom(peek()) && !is('op', '-')) throw new ParseError(`${name} needs an argument, e.g. ${name}(x)`);
+      args = [implicitArg()];
+    }
+    const ar = FUNCS[name][1];
+    if (ar > 0 && args.length !== ar) throw new ParseError(`${name} takes ${ar} argument${ar > 1 ? 's' : ''}${name === 'mod' ? ', e.g. mod(x, 2)' : ''}`);
+    let node = { k: 'call', f: name, args };
+    if (base) node = { k: 'logb', a: args[0], b: base };
+    if (pw) {
+      if (pw.k === 'neg' && pw.a.k === 'num' && pw.a.v === 1 && INVERSE[name]) node = { k: 'call', f: INVERSE[name], args };
+      else node = { k: 'pow', a: node, b: pw };
+    }
+    return node;
+  }
+  function piecewise(close) {
+    const cases = []; let def = null;
+    if (is(close)) throw new ParseError('Empty piecewise braces { }');
+    for (;;) {
+      const a = expr(); let cond = null;
+      if (is('cmp')) { const terms = [a], ops = []; while (is('cmp')) { ops.push(next().v); terms.push(expr()); } cond = { k: 'cond', terms, ops }; }
+      if (cond) {
+        if (is(':')) { next(); cases.push({ cond, val: expr() }); } else cases.push({ cond, val: { k: 'num', v: 1 } });
+      } else {
+        if (is(':')) throw new ParseError('The part before ":" must be a condition containing <, >, ≤ or ≥');
+        def = a;
+      }
+      if (is(',')) { next(); if (def) throw new ParseError('In {…}, the default value (without a condition) must come last'); continue; }
+      break;
+    }
+    if (is(close)) next();
+    else if (i < tokens.length) throw new ParseError('Missing closing } of the piecewise braces');
+    return { k: 'pw', cases, def };
+  }
+
+  if (!tokens.length) throw new ParseError('Empty expression');
+  const ast = expr();
+  if (i < tokens.length) {
+    const k = tokens[i];
+    if (k.t === ')' || k.t === ']') throw new ParseError('Unmatched ) — there is no opening (');
+    if (k.t === 'cmp') throw new ParseError('Comparisons (<, >) are only allowed inside piecewise braces { … }');
+    if (k.t === ',') throw new ParseError('Unexpected comma (commas belong inside function arguments or { } braces)');
+    throw new ParseError('Could not understand the end of the expression');
+  }
+  return ast;
+}
+
+function parseLatex(src) {
+  if (!String(src).trim()) throw new ParseError('Empty expression');
+  return parseTokens(tokenize(src));
+}
+
+/* ---------- code generation ---------- */
+function numLit(v) { return v < 0 ? `(${v})` : String(v); }
+function gen(n) {
+  switch (n.k) {
+    case 'num': return numLit(n.v);
+    case 'var': return 'x';
+    case 'neg': return `(-${gen(n.a)})`;
+    case 'bin': return `(${gen(n.l)}${n.o}${gen(n.r)})`;
+    case 'pow':
+      if (n.b.k === 'num' && Number.isInteger(n.b.v)) return `Math.pow(${gen(n.a)},${n.b.v})`;
+      return `F.pow(${gen(n.a)},${gen(n.b)})`;
+    case 'call': return `${FUNCS[n.f][0]}(${n.args.map(gen).join(',')})`;
+    case 'nroot': return `F.nroot(${gen(n.a)},${gen(n.n)})`;
+    case 'logb': return `(Math.log(${gen(n.a)})/Math.log(${gen(n.b)}))`;
+    case 'pw': {
+      let s = n.def ? gen(n.def) : 'NaN';
+      for (let j = n.cases.length - 1; j >= 0; j--) s = `(${genCond(n.cases[j].cond)}?${gen(n.cases[j].val)}:${s})`;
+      return s;
+    }
+  }
+  throw new ParseError('Internal: unknown node');
+}
+function genCond(c) {
+  const parts = [];
+  for (let j = 0; j < c.ops.length; j++) {
+    const a = gen(c.terms[j]), b = gen(c.terms[j + 1]), op = c.ops[j];
+    parts.push(op === '=' ? `(Math.abs(${a}-${b})<1e-12)` : `(${a}${op}${b})`);
+  }
+  return '(' + parts.join('&&') + ')';
+}
+function makeFn(code) { return new Function('F', `"use strict";return function(x){return ${code};}`)(F); }
+function compile(ast) { return makeFn(gen(ast)); }
+function usesVar(n) {
+  if (!n || typeof n !== 'object') return false;
+  if (n.k === 'var') return true;
+  return ['a', 'b', 'l', 'r', 'n', 'def', 'val'].some(k => usesVar(n[k])) || (n.args || []).some(usesVar) ||
+    (n.cases || []).some(c => usesVar(c.val) || c.cond.terms.some(usesVar)) || (n.terms || []).some(usesVar);
+}
+function evalConst(src, what = 'Value') {
+  if (!String(src).trim()) throw new ParseError(`${what} is empty`);
+  const ast = parseLatex(src);
+  if (usesVar(ast)) throw new ParseError(`${what} must be a number (like -π, π/2 or 3), not depend on x`);
+  const v = compile(ast)(0);
+  if (!isFinite(v)) throw new ParseError(`${what} is not a finite number`);
+  return v;
+}
+
+/* ---------- breakpoint detection (jumps / corners inside a piece) ---------- */
+function switchKeys(ast) {
+  const codes = [];
+  (function walk(n) {
+    if (!n || typeof n !== 'object') return;
+    switch (n.k) {
+      case 'pw':
+        n.cases.forEach(c => { codes.push(`(${genCond(c.cond)}?1:0)`); c.cond.terms.forEach(walk); walk(c.val); });
+        walk(n.def); return;
+      case 'call': {
+        const A = gen(n.args[0]);
+        switch (n.f) {
+          case 'abs': case 'sgn': case 'sign': case 'u': case 'step': codes.push(`Math.sign(${A})`); break;
+          case 'rect': codes.push(`(Math.abs(${A})<0.5?1:0)`); break;
+          case 'tri': codes.push(`((a)=>a<-1?0:a<0?1:a<1?2:3)(${A})`); break;
+          case 'floor': case 'ceil': case 'round': codes.push(`Math.${n.f}(${A})`); break;
+          case 'mod': codes.push(`Math.floor(${A}/(${gen(n.args[1])}))`); break;
+          case 'min': case 'max': if (n.args.length === 2) codes.push(`(${A}<${gen(n.args[1])}?0:1)`); break;
+          case 'tan': case 'sec': codes.push(`Math.floor(${A}/Math.PI+0.5)`); break;
+          case 'cot': case 'csc': codes.push(`Math.floor(${A}/Math.PI)`); break;
+          case 'sqrt': case 'ln': case 'log': codes.push(`(${A}>0?1:0)`); break;
+        }
+        n.args.forEach(walk); return;
+      }
+      case 'bin':
+        if (n.o === '/') codes.push(`Math.sign(${gen(n.r)})`);
+        walk(n.l); walk(n.r); return;
+      case 'neg': walk(n.a); return;
+      case 'pow':
+        codes.push(`Math.sign(${gen(n.a)})`);
+        walk(n.a); walk(n.b); return;
+      case 'nroot': walk(n.a); walk(n.n); return;
+      case 'logb': walk(n.a); walk(n.b); return;
+    }
+  })(ast);
+  return codes.map(makeFn);
+}
+function findBreaks(keyFns, lo, hi, M = 3000) {
+  const out = [];
+  const same = (a, b) => a === b || (Number.isNaN(a) && Number.isNaN(b));
+  for (const kf of keyFns) {
+    let xPrev = lo + (hi - lo) * 1e-10, kPrev = kf(xPrev);
+    for (let s = 1; s <= M; s++) {
+      const x = s === M ? hi - (hi - lo) * 1e-10 : lo + (hi - lo) * s / M;
+      const k = kf(x);
+      if (!same(k, kPrev)) {
+        let a = xPrev, b = x;
+        for (let it = 0; it < 64 && b - a > 1e-15 * Math.max(1, Math.abs(a)); it++) { const m = (a + b) / 2; if (same(kf(m), kPrev)) a = m; else b = m; }
+        out.push((a + b) / 2);
+        if (out.length > 4000) return out;
+      }
+      xPrev = x; kPrev = k;
+    }
+  }
+  return out;
+}
+
+/* ---------- quadrature constants ---------- */
+const GLX = [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498, 0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363];
+const GLW = [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620, 0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
+const TOTAL_PANELS = 1200;
+const ZERO = () => 0;
+
+/* ---------- model building ---------- */
+function buildModel(spec) {
+  const errors = []; const P = [];
+  spec.pieces.forEach((p, idx) => {
+    let ast = null, fn = null, a = NaN, b = NaN;
+    if (!String(p.expr).trim()) errors.push({ piece: idx, field: 'expr', msg: 'Type an expression for this piece (e.g. 1, x or sin x).' });
+    else { try { ast = parseLatex(p.expr); fn = compile(ast); } catch (e) { errors.push({ piece: idx, field: 'expr', msg: e.message }); } }
+    try { a = evalConst(p.a, 'The left bound'); } catch (e) { errors.push({ piece: idx, field: 'a', msg: e.message }); }
+    try { b = evalConst(p.b, 'The right bound'); } catch (e) { errors.push({ piece: idx, field: 'b', msg: e.message }); }
+    if (isFinite(a) && isFinite(b) && !(b > a)) errors.push({ piece: idx, field: 'b', msg: 'The right bound must be greater than the left bound.' });
+    P.push({ idx, ast, fn, a, b, latex: p.expr, aLatex: p.a, bLatex: p.b });
+  });
+  if (errors.length) return { ok: false, errors };
+  P.sort((p, q) => p.a - q.a);
+  for (let k = 1; k < P.length; k++) {
+    if (P[k].a < P[k - 1].b - 1e-12 * Math.max(1, Math.abs(P[k].a)))
+      errors.push({ piece: P[k].idx, field: 'a', msg: `This interval overlaps piece ${P[k - 1].idx + 1}. Pieces must not overlap.` });
+  }
+  if (errors.length) return { ok: false, errors };
+  const start = P[0].a, end = P[P.length - 1].b, span = end - start;
+  let T = span;
+  if (spec.periodMode === 'custom') {
+    try { T = evalConst(spec.periodSrc, 'The period'); } catch (e) { return { ok: false, errors: [{ piece: -1, field: 'period', msg: e.message }] }; }
+    if (!(T > 0)) return { ok: false, errors: [{ piece: -1, field: 'period', msg: 'The period must be positive.' }] };
+    if (T < span * (1 - 1e-12)) return { ok: false, errors: [{ piece: -1, field: 'period', msg: `T must be at least the total width of your pieces (${+span.toPrecision(6)}).` }] };
+  }
+  const notes = [];
+  const eps = 1e-12 * Math.max(1, Math.abs(T));
+  const segs = []; let cur = start, hasGap = false;
+  for (const p of P) {
+    if (p.a > cur + eps) { segs.push({ lo: cur, hi: p.a, fn: ZERO, gap: true }); hasGap = true; }
+    segs.push({ lo: p.a, hi: p.b, fn: p.fn, piece: p }); cur = p.b;
+  }
+  if (start + T > cur + eps) { segs.push({ lo: cur, hi: start + T, fn: ZERO, gap: true }); hasGap = true; }
+  if (hasGap) notes.push({ type: 'info', msg: 'f = 0 on the parts of the period not covered by any piece.' });
+  for (const s of segs) {
+    if (s.gap) { s.breaks = []; continue; }
+    const keys = switchKeys(s.piece.ast);
+    let br = keys.length ? findBreaks(keys, s.lo, s.hi) : [];
+    br.sort((a, b) => a - b);
+    const ded = [];
+    for (const x of br) if (x > s.lo + eps && x < s.hi - eps && (!ded.length || x - ded[ded.length - 1] > eps)) ded.push(x);
+    s.breaks = ded;
+  }
+  const wrap = x => { let u = (x - start) % T; if (u < 0) u += T; return start + u; };
+  const segAt = u => { let lo = 0, hi = segs.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (segs[m].lo <= u) lo = m; else hi = m - 1; } return segs[lo]; };
+  const fp = x => { const u = wrap(x); return segAt(u).fn(u); };
+
+  // quadrature nodes
+  const subs = [];
+  for (const s of segs) {
+    if (s.gap) continue;
+    const pts = [s.lo, ...s.breaks, s.hi];
+    for (let k = 0; k < pts.length - 1; k++) if (pts[k + 1] - pts[k] > 1e-14 * T) subs.push({ lo: pts[k], hi: pts[k + 1], fn: s.fn });
+  }
+  let total = 0;
+  const plan = subs.map(sb => { const np = Math.max(2, Math.ceil(TOTAL_PANELS * (sb.hi - sb.lo) / T)); total += np * 8; return np; });
+  const X = new Float64Array(total), W = new Float64Array(total), FV = new Float64Array(total);
+  let idx = 0, undef = 0, infAt = null, fmin = Infinity, fmax = -Infinity;
+  subs.forEach((sb, k) => {
+    const np = plan[k], h = (sb.hi - sb.lo) / np, hh = h / 2;
+    for (let p = 0; p < np; p++) {
+      const c = sb.lo + (p + 0.5) * h;
+      for (let g = 0; g < 8; g++) {
+        const x = c + hh * GLX[g]; let y = sb.fn(x);
+        if (!isFinite(y)) { if (Number.isNaN(y)) { undef++; y = 0; } else { if (infAt === null) infAt = x; y = 0; } }
+        else { if (y < fmin) fmin = y; if (y > fmax) fmax = y; }
+        X[idx] = x; W[idx] = hh * GLW[g]; FV[idx] = y; idx++;
+      }
+    }
+  });
+  if (infAt === null) {
+    const d1 = 1e-5 * T, d2 = 1e-11 * T;
+    for (const sb of subs) {
+      const w = sb.hi - sb.lo;
+      for (const [x0, dir] of [[sb.lo, 1], [sb.hi, -1]]) {
+        const y1 = sb.fn(x0 + dir * Math.min(d1, w * 0.25)), y2 = sb.fn(x0 + dir * Math.min(d2, w * 1e-6));
+        if ((!isFinite(y2) && !Number.isNaN(y2)) || (isFinite(y1) && isFinite(y2) && Math.abs(y2) > 1e5 && Math.abs(y2) > 500 * Math.max(1, Math.abs(y1)))) {
+          infAt = x0; break;
+        }
+      }
+      if (infAt !== null) break;
+    }
+  }
+  if (hasGap) { fmin = Math.min(fmin, 0); fmax = Math.max(fmax, 0); }
+  if (!isFinite(fmin)) { fmin = 0; fmax = 0; }
+  if (infAt !== null || Math.max(Math.abs(fmin), Math.abs(fmax)) > 1e12)
+    return { ok: false, errors: [{ piece: -1, field: 'global', msg: `f becomes infinite near x ≈ ${+(infAt ?? 0).toPrecision(4)}. A Fourier series needs a signal with finite energy per period (avoid poles like 1/x or tan x inside the interval).` }] };
+  if (undef > 0) notes.push({ type: 'warn', msg: `f is undefined on part of the period (e.g. no piecewise condition is true there, or sqrt/ln of a negative number). It is treated as 0 there.` });
+
+  const scale = Math.max(Math.abs(fmin), Math.abs(fmax), 1e-300);
+  const w0 = 2 * PI / T;
+  const res = { ok: true, start, T, w0, segs, pieces: P, notes, fmin, fmax, scale, fp, wrap, nSamples: total };
+  if (spec.noCoeffs) return res;
+
+  // Fourier coefficients for n = 0..NMAX in one pass (rotation recurrence, reseeded every 50 steps)
+  const A = new Float64Array(NMAX + 1), B = new Float64Array(NMAX + 1);
+  let S0 = 0, PW = 0;
+  for (let i = 0; i < total; i++) {
+    const fv = FV[i], wf = W[i] * fv; if (wf === 0) continue;
+    S0 += wf; PW += wf * fv;
+    const th = w0 * X[i], c1 = Math.cos(th), s1 = Math.sin(th);
+    let c = c1, s = s1;
+    for (let n = 1; n <= NMAX; n++) {
+      A[n] += wf * c; B[n] += wf * s;
+      if (n % 50 === 0) { c = Math.cos((n + 1) * th); s = Math.sin((n + 1) * th); }
+      else { const cn = c * c1 - s * s1; s = s * c1 + c * s1; c = cn; }
+    }
+  }
+  A[0] = S0 / T;
+  const zt = 1e-11 * scale;
+  if (Math.abs(A[0]) < zt) A[0] = 0;
+  for (let n = 1; n <= NMAX; n++) {
+    A[n] *= 2 / T; B[n] *= 2 / T;
+    if (Math.abs(A[n]) < zt) A[n] = 0;
+    if (Math.abs(B[n]) < zt) B[n] = 0;
+  }
+  res.A = A; res.B = B; res.power = PW / T;
+  // cumulative Parseval power
+  const cum = new Float64Array(NMAX + 1); cum[0] = A[0] * A[0];
+  for (let n = 1; n <= NMAX; n++) cum[n] = cum[n - 1] + 0.5 * (A[n] * A[n] + B[n] * B[n]);
+  res.cum = cum;
+
+  // jump detection at piece boundaries and internal breakpoints
+  const cand = [];
+  for (const s of segs) { cand.push(s.lo); for (const b of s.breaks) cand.push(b); }
+  const d = 1e-9 * T, jumps = [];
+  for (const x0 of cand) {
+    const L = fp(x0 - d), R = fp(x0 + d);
+    if (isFinite(L) && isFinite(R) && Math.abs(L - R) > 1e-6 * scale) jumps.push({ x: x0, L, R });
+  }
+  res.jumps = jumps;
+  return res;
+}
+
+/* ---------- partial-sum evaluation (recurrence, no per-term trig calls) ---------- */
+function seriesEval(xs, out, N, A, B, w0) {
+  const len = xs.length;
+  for (let i = 0; i < len; i++) {
+    const th = w0 * xs[i];
+    let sum = A[0];
+    if (N > 0) {
+      const c1 = Math.cos(th), s1 = Math.sin(th); let c = c1, s = s1;
+      for (let n = 1; n <= N; n++) {
+        sum += A[n] * c + B[n] * s;
+        if (n % 50 === 0) { c = Math.cos((n + 1) * th); s = Math.sin((n + 1) * th); }
+        else { const cn = c * c1 - s * s1; s = s * c1 + c * s1; c = cn; }
+      }
+    }
+    out[i] = sum;
+  }
+  return out;
+}
+function seriesAt(x, N, A, B, w0) { const o = new Float64Array(1); return seriesEval([x], o, N, A, B, w0)[0]; }
+
+/* ---------- Gibbs overshoot near the largest jump ---------- */
+function gibbs(m, N, A, B) {
+  if (!m.jumps.length || N < 1) return null;
+  let J = m.jumps[0];
+  for (const j of m.jumps) if (Math.abs(j.R - j.L) > Math.abs(J.R - J.L)) J = j;
+  const size = Math.abs(J.R - J.L), hiV = Math.max(J.L, J.R), loV = Math.min(J.L, J.R);
+  const w = Math.min(m.T / 2, 3 * m.T / (N + 1)), K = 600;
+  const xs = new Float64Array(K + 1); for (let k = 0; k <= K; k++) xs[k] = J.x - w + 2 * w * k / K;
+  const ys = seriesEval(xs, new Float64Array(K + 1), N, A, B, m.w0);
+  let over = 0, peakX = J.x, peakY = hiV, targetY = hiV;
+  for (let k = 0; k <= K; k++) {
+    if (ys[k] - hiV > over) { over = ys[k] - hiV; peakX = xs[k]; peakY = ys[k]; targetY = hiV; }
+    if (loV - ys[k] > over) { over = loV - ys[k]; peakX = xs[k]; peakY = ys[k]; targetY = loV; }
+  }
+  return { pct: 100 * over / size, x: J.x, size, peakX, peakY, targetY };
+}
+
+/* ---------- LTI filters ---------- */
+const FILTERS = {
+  none: { H: () => [1, 0] },
+  lpf1: { H: (w, p) => { const r = w / p.wc, d = 1 + r * r; return [1 / d, -r / d]; } },
+  hpf1: { H: (w, p) => { const r = w / p.wc, d = 1 + r * r; return [r * r / d, r / d]; } },
+  lpf2: { H: (w, p) => { const r = w / p.wc, re = 1 - r * r, im = Math.SQRT2 * r, d = re * re + im * im; return [re / d, -im / d]; } },
+  ilpf: { H: (w, p) => [Math.abs(w) <= p.wc * (1 + 1e-12) ? 1 : 0, 0] },
+  ihpf: { H: (w, p) => [Math.abs(w) >= p.wc * (1 - 1e-12) ? 1 : 0, 0] },
+  diff: { H: (w) => [0, w] },
+  integ: { H: (w) => (w === 0 ? [0, 0] : [0, -1 / w]) },
+  delay: { H: (w, p) => [Math.cos(w * p.t0), -Math.sin(w * p.t0)] }
+};
+function filterCoeffs(m, type, p) {
+  const H = FILTERS[type].H, A = new Float64Array(NMAX + 1), B = new Float64Array(NMAX + 1);
+  const H0 = H(0, p); A[0] = H0[0] * m.A[0];
+  for (let n = 1; n <= NMAX; n++) {
+    const [hr, hi] = H(n * m.w0, p), a = m.A[n], b = m.B[n];
+    A[n] = hr * a + hi * b; B[n] = hr * b - hi * a;
+  }
+  let pw = A[0] * A[0]; for (let n = 1; n <= NMAX; n++) pw += 0.5 * (A[n] * A[n] + B[n] * B[n]);
+  return { A, B, power: pw, H: w => H(w, p) };
+}
+
+/* ---------- number beautification ---------- */
+function toFrac(r, maxDen = 64, tol = 1e-9) {
+  for (let q = 1; q <= maxDen; q++) {
+    const p = Math.round(r * q);
+    if (Math.abs(p) > 1e6) return null;
+    if (Math.abs(r - p / q) <= tol * Math.max(1, Math.abs(r))) return { p, q };
+  }
+  return null;
+}
+function fmt(v, sig = 6) {
+  if (v === 0 || !isFinite(v)) return String(v === 0 ? 0 : v);
+  const a = Math.abs(v);
+  if (a < 1e-4 || a >= 1e6) {
+    const [m, e] = v.toExponential(Math.max(0, sig - 3)).split('e');
+    return `${+m}\\times 10^{${+e}}`;
+  }
+  return String(+v.toPrecision(sig));
+}
+function fmtPlain(v, sig = 6) {
+  if (v === 0) return '0';
+  if (!isFinite(v)) return String(v);
+  const a = Math.abs(v);
+  if (a < 1e-4 || a >= 1e6) return v.toExponential(Math.max(0, sig - 3)).replace(/\.?0+e/, 'e');
+  return String(+v.toPrecision(sig));
+}
+function niceParts(v, tol = 1e-9) {
+  if (!isFinite(v)) return { sign: 1, dec: String(v) };
+  if (Math.abs(v) < 1e-14) return { zero: true, sign: 1, num: 0, den: 1, k: 0 };
+  for (const k of [0, -1, 1, -2, 2, -3]) {
+    const fr = toFrac(v / Math.pow(PI, k), 64, tol);
+    if (fr && fr.p !== 0) return { sign: Math.sign(fr.p), num: Math.abs(fr.p), den: fr.q, k };
+  }
+  return { sign: Math.sign(v), dec: fmt(Math.abs(v)) };
+}
+const piPow = k => (k === 1 ? '\\pi ' : `\\pi^{${k}}`);
+function partsLatex(P) {
+  if (P.zero) return '0';
+  const sg = P.sign < 0 ? '-' : '';
+  if (P.dec !== undefined) return sg + P.dec;
+  let num = (P.num === 1 && P.k > 0) ? '' : String(P.num);
+  if (P.k > 0) num += piPow(P.k);
+  let den = P.den === 1 ? '' : String(P.den);
+  if (P.k < 0) den += piPow(-P.k);
+  return sg + (den ? `\\frac{${num.trim()}}{${den.trim()}}` : num.trim());
+}
+const niceLatex = (v, tol) => partsLatex(niceParts(v, tol));
+function argNumeric(val, v) {
+  const P = niceParts(val, 1e-9);
+  if (P.dec !== undefined) return `${P.dec}${v}`;
+  const num = (P.num === 1 ? '' : P.num) + (P.k > 0 ? piPow(P.k) : '') + v;
+  const den = (P.den === 1 ? '' : String(P.den)) + (P.k < 0 ? piPow(-P.k) : '');
+  return den ? `\\frac{${num}}{${den.trim()}}` : num;
+}
+function argSymbolic(W, v) {
+  if (W.dec !== undefined) return `${W.dec}\\,n${v}`;
+  const num = (W.num === 1 ? '' : W.num) + 'n' + (W.k > 0 ? piPow(W.k) : '') + v;
+  const den = (W.den === 1 ? '' : String(W.den)) + (W.k < 0 ? piPow(-W.k) : '');
+  return den ? `\\frac{${num}}{${den.trim()}}` : num;
+}
+
+/* ---------- closed-form recognition of coefficient sequences ---------- */
+const PARITIES = [
+  { id: 'all', inSet: n => true, signs: [{ lx: '', f: () => 1 }, { lx: '(-1)^{n}', f: n => (n % 2 ? -1 : 1) }, { lx: '(-1)^{n+1}', f: n => (n % 2 ? 1 : -1) }] },
+  { id: 'odd', inSet: n => n % 2 === 1, signs: [{ lx: '', f: () => 1 }, { lx: '(-1)^{\\frac{n-1}{2}}', f: n => (((n - 1) / 2) % 2 ? -1 : 1) }] },
+  { id: 'even', inSet: n => n % 2 === 0, signs: [{ lx: '', f: () => 1 }, { lx: '(-1)^{\\frac{n}{2}}', f: n => ((n / 2) % 2 ? -1 : 1) }] }
+];
+const FIXED = [
+  { id: '1', g: () => 1, den: '' }, { id: '1/n', g: n => 1 / n, den: 'n' }, { id: '1/n2', g: n => 1 / (n * n), den: 'n^{2}' },
+  { id: '1/n3', g: n => 1 / (n * n * n), den: 'n^{3}' }, { id: '1/n4', g: n => 1 / (n * n * n * n), den: 'n^{4}' }
+];
+function fitPatterns(C, s, M, tol) {
+  const check = (pred) => {
+    for (let n = s; n <= M; n++) if (Math.abs(C[n] - pred(n)) > tol) return false;
+    for (const n of [97, 151, 233, 377]) if (n <= NMAX && Math.abs(C[n] - pred(n)) > tol * 20) return false;
+    return true;
+  };
+  // fixed shapes
+  for (const par of PARITIES) for (const sg of par.signs) for (const sh of FIXED) {
+    let n1 = s; while (n1 <= M && !par.inSet(n1)) n1++;
+    const K = C[n1] / (sg.f(n1) * sh.g(n1));
+    if (!isFinite(K) || Math.abs(K) < tol) continue;
+    const pred = n => (par.inSet(n) ? K * sg.f(n) * sh.g(n) : 0);
+    if (check(pred)) return { type: 'pattern', parity: par.id, signLx: sg.lx, shape: sh.id, shDen: sh.den, K };
+  }
+  // fitted c: K/(n^2+c) and K n/(n^2+c)
+  for (const par of PARITIES) for (const sg of par.signs) for (const kind of ['1/(n2+c)', 'n/(n2+c)']) {
+    const mem = []; for (let n = s; n <= M && mem.length < 2; n++) if (par.inSet(n)) mem.push(n);
+    if (mem.length < 2) continue;
+    const [n1, n2] = mem, u1 = C[n1] / sg.f(n1), u2 = C[n2] / sg.f(n2);
+    if (Math.abs(u1) < tol || Math.abs(u2) < tol) continue;
+    let c, K;
+    if (kind === '1/(n2+c)') { if (Math.abs(u1 - u2) < 1e-15) continue; c = (u2 * n2 * n2 - u1 * n1 * n1) / (u1 - u2); K = u1 * (n1 * n1 + c); }
+    else { const dd = u1 * n2 - u2 * n1; if (Math.abs(dd) < 1e-15) continue; c = n1 * n2 * (u2 * n2 - u1 * n1) / dd; K = u1 * (n1 * n1 + c) / n1; }
+    if (!isFinite(c) || !isFinite(K) || Math.abs(c) < 1e-9) continue;
+    let bad = false; for (let n = s; n <= M; n++) if (par.inSet(n) && Math.abs(n * n + c) < 1e-9) bad = true;
+    if (bad) continue;
+    const g = kind === '1/(n2+c)' ? (n => 1 / (n * n + c)) : (n => n / (n * n + c));
+    const pred = n => (par.inSet(n) ? K * sg.f(n) * g(n) : 0);
+    if (check(pred)) return { type: 'pattern', parity: par.id, signLx: sg.lx, shape: kind, c, K };
+  }
+  // fitted alpha (pulse-train-like): sin(n a)/n, sin(n a)/n^2, (1-cos(n a))/n, (1-cos n a)/n^2
+  if (s === 1) {
+    const v1 = C[1], v2 = C[2];
+    if (Math.abs(v1) > tol) {
+      const kinds = [
+        { id: 'sin/n', cosA: v2 / v1, g: (n, a) => Math.sin(n * a) / n, k1: a => Math.sin(a) },
+        { id: 'sin/n2', cosA: 2 * v2 / v1, g: (n, a) => Math.sin(n * a) / (n * n), k1: a => Math.sin(a) },
+        { id: '1-cos/n', cosA: v2 / v1 - 1, g: (n, a) => (1 - Math.cos(n * a)) / n, k1: a => 1 - Math.cos(a) },
+        { id: '1-cos/n2', cosA: 2 * v2 / v1 - 1, g: (n, a) => (1 - Math.cos(n * a)) / (n * n), k1: a => 1 - Math.cos(a) }
+      ];
+      for (const kd of kinds) {
+        if (Math.abs(kd.cosA) > 1 + 1e-9) continue;
+        const a = Math.acos(Math.max(-1, Math.min(1, kd.cosA)));
+        const den = kd.k1(a); if (Math.abs(den) < 1e-9) continue;
+        const K = v1 / den, pred = n => K * kd.g(n, a);
+        if (check(pred)) return { type: 'pattern', parity: 'all', signLx: '', shape: kd.id, alpha: a, K };
+      }
+    }
+  }
+  return null;
+}
+function recognize(C, ref) {
+  const tol = 1e-7 * ref + 1e-13, M = 60;
+  const nz = []; for (let n = 1; n <= NMAX; n++) if (Math.abs(C[n]) > tol) nz.push(n);
+  if (!nz.length) return { type: 'zero' };
+  if (nz.length <= 6 && nz[nz.length - 1] <= 40) return { type: 'finite', terms: nz.map(n => ({ n, v: C[n] })) };
+  for (const s of [1, 2]) {
+    const r = fitPatterns(C, s, M, tol);
+    if (r) { r.startN = s; r.exc = s === 2 ? [{ n: 1, v: C[1] }] : []; return r; }
+  }
+  return { type: 'numeric' };
+}
+function alphaN(a) {
+  const P = niceParts(a, 1e-8);
+  if (P.dec === undefined && P.k === 1) { const num = (P.num === 1 ? '' : P.num) + 'n\\pi '; return P.den === 1 ? num.trim() : `\\frac{${num.trim()}}{${P.den}}`; }
+  if (P.dec === undefined && P.k === 0) { const num = (P.num === 1 ? '' : P.num) + 'n'; return P.den === 1 ? num : `\\frac{${num}}{${P.den}}`; }
+  return `${fmt(a)}\\,n`;
+}
+/* returns {expr, parity, startN, exc} LaTeX pieces for a recognized pattern */
+function patternLatex(r) {
+  let sNum = '', sDen = '', compound = false, Kmul = 1;
+  switch (r.shape) {
+    case '1': break;
+    case '1/n': case '1/n2': case '1/n3': case '1/n4': sDen = r.shDen; break;
+    case '1/(n2+c)': case 'n/(n2+c)': {
+      const cp = toFrac(r.c, 64, 1e-7);
+      if (cp) { Kmul = cp.q; sDen = `${cp.q === 1 ? '' : cp.q}n^{2}${cp.p < 0 ? '-' : '+'}${Math.abs(cp.p)}`; }
+      else sDen = `n^{2}${r.c < 0 ? '-' : '+'}${fmt(Math.abs(r.c))}`;
+      compound = true; if (r.shape[0] === 'n') sNum = 'n'; break;
+    }
+    case 'sin/n': sNum = `\\sin\\left(${alphaN(r.alpha)}\\right)`; sDen = 'n'; break;
+    case 'sin/n2': sNum = `\\sin\\left(${alphaN(r.alpha)}\\right)`; sDen = 'n^{2}'; break;
+    case '1-cos/n': sNum = `\\left(1-\\cos\\left(${alphaN(r.alpha)}\\right)\\right)`; sDen = 'n'; break;
+    case '1-cos/n2': sNum = `\\left(1-\\cos\\left(${alphaN(r.alpha)}\\right)\\right)`; sDen = 'n^{2}'; break;
+  }
+  const K = r.K * Kmul;
+  let neg = K < 0, signLx = r.signLx;
+  if (neg && signLx === '(-1)^{n}') { signLx = '(-1)^{n+1}'; neg = false; }
+  else if (neg && signLx === '(-1)^{n+1}') { signLx = '(-1)^{n}'; neg = false; }
+  const Kp = niceParts(Math.abs(K), 1e-7);
+  let num, den;
+  if (Kp.dec !== undefined) { num = Kp.dec + (sNum ? '\\,' + sNum : ''); den = sDen; }
+  else {
+    num = ((Kp.num === 1 && (Kp.k > 0 || sNum)) ? '' : String(Kp.num)) + (Kp.k > 0 ? piPow(Kp.k) : '') + sNum;
+    if (!num) num = '1';
+    const kd = Kp.den === 1 ? '' : String(Kp.den), pd = Kp.k < 0 ? piPow(-Kp.k) : '';
+    if (compound) den = kd + pd + ((kd || pd) ? `\\left(${sDen}\\right)` : sDen);
+    else den = kd + sDen + pd;
+  }
+  num = num.trim(); den = (den || '').trim();
+  let body;
+  if (den) body = `${signLx}\\frac{${num}}{${den}}`;
+  else body = num === '1' ? (signLx || '1') : `${num}${signLx}`;
+  return { expr: (neg ? '-' : '') + body, parity: r.parity, startN: r.startN, exc: r.exc };
+}
+
+/* ---------- higher-level analysis ---------- */
+function analyze(m) {
+  const { A, B } = m, ref = m.scale;
+  const tol = 1e-7 * ref + 1e-13;
+  let maxA = 0, maxB = 0, maxEven = 0, maxOdd = 0;
+  for (let n = 1; n <= NMAX; n++) {
+    const a = Math.abs(A[n]), b = Math.abs(B[n]);
+    if (a > maxA) maxA = a; if (b > maxB) maxB = b;
+    if (n % 2 === 0) maxEven = Math.max(maxEven, a, b); else maxOdd = Math.max(maxOdd, a, b);
+  }
+  const dc = Math.abs(A[0]) > tol, sym = [];
+  if (maxA <= tol && maxB <= tol) sym.push('dc');
+  else {
+    if (maxB <= tol) sym.push('even');
+    if (maxA <= tol) sym.push(dc ? 'odd-dc' : 'odd');
+    if (maxEven <= tol && maxOdd > tol) sym.push(dc ? 'hw-dc' : 'hw');
+    if (maxOdd <= tol && maxEven > tol) sym.push('halfperiod');
+    if (!sym.length) sym.push('none');
+  }
+  // decay
+  const amp = n => Math.hypot(A[n], B[n]);
+  let maxAmp = 0, last = 0;
+  for (let n = 1; n <= NMAX; n++) { const v = amp(n); if (v > maxAmp) maxAmp = v; if (v > 1e-9 * ref) last = n; }
+  let decay;
+  if (maxAmp <= 1e-9 * ref) decay = { type: 'none' };
+  else if (last <= 300) decay = { type: 'finite', last };
+  else {
+    const bins = [[4, 8], [8, 16], [16, 32], [32, 64], [64, 128], [128, 256], [256, NMAX + 1]], pts = [];
+    for (const [lo, hi] of bins) {
+      let best = 0, bn = lo;
+      for (let n = lo; n < hi; n++) { const v = amp(n); if (v > best) { best = v; bn = n; } }
+      if (best > 1e-8 * ref) pts.push([Math.log(bn), Math.log(best)]);
+    }
+    if (pts.length >= 3) {
+      const k = pts.length; let sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (const [x, y] of pts) { sx += x; sy += y; sxx += x * x; sxy += x * y; }
+      const slope = (k * sxy - sx * sy) / (k * sxx - sx * sx);
+      decay = { type: 'power', p: -slope };
+    } else decay = { type: 'fast' };
+  }
+  return { sym, decay, recA: recognize(A, ref), recB: recognize(B, ref) };
+}
+
+return { NMAX, ParseError, parseLatex, compile, evalConst, buildModel, seriesEval, seriesAt, gibbs, filterCoeffs, FILTERS,
+  niceParts, niceLatex, partsLatex, argNumeric, argSymbolic, patternLatex, analyze, recognize, fmt, fmtPlain, toFrac, piPow };
+})();
+</script>
+
+<!-- ======================================================================
+     APPLICATION / UI
+     ====================================================================== -->
+<script id="app">
+(() => {
+'use strict';
+const C = window.FourierCore, NMAX = C.NMAX;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const MQ = (window.MathQuill && window.jQuery) ? window.MathQuill.getInterface(2) : null;
+const hasKatex = !!window.katex;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function tex(el, latex, display = false) {
+  if (!el) return;
+  if (hasKatex) { try { katex.render(latex, el, { displayMode: display, throwOnError: false, strict: false }); return; } catch (e) { /* fallthrough */ } }
+  el.textContent = latex;
+}
+function texStr(latex, display = false) {
+  if (hasKatex) { try { return katex.renderToString(latex, { displayMode: display, throwOnError: false, strict: false }); } catch (e) { /* */ } }
+  return esc(latex);
+}
+
+/* ---------------- state ---------------- */
+const app = {
+  pieces: [], periodMode: 'auto', VAR: 'x',
+  N: 5, Nmax: 50, model: null, an: null, modelSeq: 0,
+  view: { x0: -10, x1: 10, y0: -2, y1: 2 }, userMoved: false, lastSig: '',
+  layout: 'overlay', show: { f: true, s: true, harm: false, err: false, mid: true, out: false },
+  specMode: 'amp', formMode: 'trig',
+  filter: { type: 'none', wcRatio: 5, t0: 0.25 }, flt: null,
+  hoverX: null, hoverHarm: null, hoverGibbs: false, audioOn: false, playing: false, activePreset: null
+};
+
+/* ---------------- MathQuill fields ---------------- */
+const MQ_CFG = {
+  spaceBehavesLikeTab: false, leftRightIntoCmdGoes: 'up', restrictMismatchedBrackets: true,
+  sumStartsWithNEquals: true, supSubsRequireOperand: true, charsThatBreakOutOfSupSub: '+-=<>',
+  autoSubscriptNumerals: false, autoCommands: 'pi sqrt nthroot',
+  autoOperatorNames: 'sin cos tan sec csc cot sinh cosh tanh arcsin arccos arctan exp ln log abs floor ceil round sgn sign rect tri sinc mod min max step'
+};
+let suppress = 0;
+function makeField(host, latex, onEdit, onEnter) {
+  if (MQ) {
+    const mf = MQ.MathField(host, Object.assign({}, MQ_CFG, {
+      handlers: { edit: () => { if (!suppress) onEdit && onEdit(); }, enter: () => onEnter && onEnter() }
+    }));
+    if (latex) { suppress++; mf.latex(latex); suppress--; }
+    return { latex: () => mf.latex(), set: l => { suppress++; mf.latex(l); suppress--; }, focus: () => mf.focus(), host };
+  }
+  const inp = document.createElement('input'); inp.className = 'plain-field'; inp.value = latex || ''; inp.spellcheck = false;
+  host.appendChild(inp);
+  inp.addEventListener('input', () => onEdit && onEdit());
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') onEnter && onEnter(); });
+  return { latex: () => inp.value, set: l => { inp.value = l; }, focus: () => inp.focus(), host };
+}
+
+/* swap the variable letter in a LaTeX string without touching command names */
+function swapVar(latex, from, to) {
+  let out = '', i = 0;
+  while (i < latex.length) {
+    if (latex[i] === '\\') {
+      let j = i + 1; while (j < latex.length && /[a-zA-Z]/.test(latex[j])) j++;
+      if (j === i + 1) j++;
+      const cmd = latex.slice(i, j); out += cmd; i = j;
+      if (/^\\(operatorname|text|mathrm)$/.test(cmd)) { const close = latex.indexOf('}', i); if (close > 0) { out += latex.slice(i, close + 1); i = close + 1; } }
+      continue;
+    }
+    out += latex[i] === from ? to : latex[i]; i++;
+  }
+  return out;
+}
+
+/* ---------------- pieces UI ---------------- */
+const piecesEl = $('#pieces');
+let pieceSeq = 0;
+function addPiece(p = { e: '', a: '', b: '' }, focus = false) {
+  const row = document.createElement('div'); row.className = 'piece';
+  row.innerHTML = `<div class="piece-top"><span class="piece-label"></span><div class="piece-expr"><span class="mq-host f-e"></span></div>
+    <button class="icon-btn piece-del" title="Remove this piece" aria-label="Remove piece"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="piece-int"><span class="int-lbl">for</span><span class="mq-host f-a"></span><span class="int-mid"></span><span class="mq-host f-b"></span></div>
+    <div class="piece-err" role="alert"></div>`;
+  piecesEl.appendChild(row);
+  const piece = { row, id: ++pieceSeq };
+  const focusNext = (which) => {
+    const k = app.pieces.indexOf(piece);
+    if (which === 'e') piece.fa.focus();
+    else if (which === 'a') piece.fb.focus();
+    else if (k < app.pieces.length - 1) app.pieces[k + 1].fe.focus();
+  };
+  piece.fe = makeField($('.f-e', row), p.e, scheduleCompute, () => focusNext('e'));
+  piece.fa = makeField($('.f-a', row), p.a, scheduleCompute, () => focusNext('a'));
+  piece.fb = makeField($('.f-b', row), p.b, scheduleCompute, () => focusNext('b'));
+  $('.piece-del', row).addEventListener('click', () => removePiece(piece));
+  app.pieces.push(piece);
+  relabel();
+  if (focus) setTimeout(() => piece.fe.focus(), 30);
+  return piece;
+}
+function removePiece(piece) {
+  if (app.pieces.length <= 1) return;
+  piece.row.remove();
+  app.pieces = app.pieces.filter(p => p !== piece);
+  relabel(); clearPreset(); scheduleCompute();
+}
+function relabel() {
+  const multi = app.pieces.length > 1, v = app.VAR;
+  app.pieces.forEach((p, k) => {
+    $('.piece-label', p.row).innerHTML = multi ? `f<sub>${k + 1}</sub>(${v}) =` : `f(${v}) =`;
+    $('.int-mid', p.row).textContent = `< ${v} <`;
+    $('.piece-del', p.row).style.visibility = multi ? 'visible' : 'hidden';
+  });
+  $('#lblFx').textContent = `f(${v})`;
+  $('#chipF').textContent = `f(${v})`;
+  $('#chipS').innerHTML = `S<sub>N</sub>(${v})`;
+}
+function clearPreset() { app.activePreset = null; $$('.preset').forEach(b => b.classList.remove('active')); }
+
+/* ---------------- presets ---------------- */
+const PRESETS = [
+  { id: 'square', name: 'Square wave', pieces: [['-1', '-\\pi', '0'], ['1', '0', '\\pi']] },
+  { id: 'saw', name: 'Sawtooth', pieces: [['@', '-\\pi', '\\pi']] },
+  { id: 'tri', name: 'Triangle', pieces: [['\\left|@\\right|', '-\\pi', '\\pi']] },
+  { id: 'hwr', name: 'Half-wave rectified', pieces: [['\\sin @', '0', '\\pi'], ['0', '\\pi', '2\\pi']] },
+  { id: 'fwr', name: 'Full-wave rectified', pieces: [['\\sin @', '0', '\\pi']] },
+  { id: 'pulse', name: 'Pulse train 25%', pieces: [['1', '-\\frac{1}{8}', '\\frac{1}{8}']], period: '1' },
+  { id: 'para', name: 'Parabolic', pieces: [['@^{2}', '-\\pi', '\\pi']] },
+  { id: 'ramp', name: 'Ramp (π−x)/2', pieces: [['\\frac{\\pi-@}{2}', '0', '2\\pi']] },
+  { id: 'exp', name: 'Exponential decay', pieces: [['e^{-@}', '0', '2\\pi']] },
+  { id: 'trap', name: 'Trapezoid {…}', pieces: [['\\left\\{@<1:@,@<2:1,@<3:3-@,0\\right\\}', '0', '4']] },
+  { id: 'harm', name: 'Two harmonics', pieces: [['\\sin @+\\frac{1}{3}\\sin\\left(3@\\right)', '-\\pi', '\\pi']] },
+  { id: 'rect', name: 'rect( ) pulse', pieces: [['\\operatorname{rect}\\left(@\\right)', '-2', '2']] }
+];
+const subVar = s => s.replace(/@/g, app.VAR);
+function buildPresetButtons() {
+  const host = $('#presets');
+  for (const pr of PRESETS) {
+    const b = document.createElement('button'); b.className = 'preset'; b.dataset.id = pr.id; b.title = `Load: ${pr.name}`;
+    let path = '';
+    try {
+      const m = C.buildModel({ pieces: pr.pieces.map(([e, a, bb]) => ({ expr: e.replace(/@/g, 'x'), a, b: bb })), periodMode: pr.period ? 'custom' : 'auto', periodSrc: pr.period || '', noCoeffs: true });
+      if (m.ok) {
+        const K = 90, x0 = m.start - m.T * 0.25, span = m.T * 2, lo = m.fmin, hi = m.fmax, rng = (hi - lo) || 1;
+        for (let k = 0; k <= K; k++) {
+          const x = x0 + span * k / K, y = m.fp(x);
+          const px = (k / K * 100).toFixed(1), py = (24 - (y - lo) / rng * 20).toFixed(1);
+          path += (k ? 'L' : 'M') + px + ' ' + py;
+        }
+      }
+    } catch (e) { /* ignore thumbnail errors */ }
+    b.innerHTML = `<svg viewBox="0 0 100 28" preserveAspectRatio="none"><path d="${path}" vector-effect="non-scaling-stroke"/></svg><span>${esc(pr.name)}</span>`;
+    b.addEventListener('click', () => loadPreset(pr.id));
+    host.appendChild(b);
+  }
+}
+function setPieces(list) {
+  app.pieces.forEach(p => p.row.remove()); app.pieces = [];
+  list.forEach(([e, a, b]) => addPiece({ e, a, b }));
+}
+function loadPreset(id) {
+  const pr = PRESETS.find(p => p.id === id); if (!pr) return;
+  stopPlay();
+  setPieces(pr.pieces.map(([e, a, b]) => [subVar(e), a, b]));
+  setPeriodMode(pr.period ? 'custom' : 'auto', pr.period || '');
+  app.activePreset = id;
+  $$('.preset').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  app.userMoved = false; app.lastSig = '';
+  compute();
+}
+
+/* ---------------- period / variable controls ---------------- */
+let periodField = null;
+function setPeriodMode(mode, src) {
+  app.periodMode = mode;
+  $$('#periodSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === mode));
+  $('#periodAuto').style.display = mode === 'auto' ? '' : 'none';
+  $('#periodFieldWrap').style.display = mode === 'custom' ? '' : 'none';
+  if (mode === 'custom') {
+    if (!periodField) periodField = makeField($('#periodField'), '', scheduleCompute);
+    if (src !== undefined && src !== null && src !== '') periodField.set(src);
+    else if (!periodField.latex() && app.model) periodField.set(C.niceLatex(app.model.T));
+  }
+}
+$$('#periodSeg button').forEach(b => b.addEventListener('click', () => { setPeriodMode(b.dataset.v); clearPreset(); scheduleCompute(); }));
+$$('#varSeg button').forEach(b => b.addEventListener('click', () => {
+  const nv = b.dataset.v; if (nv === app.VAR) return;
+  const old = app.VAR; app.VAR = nv;
+  $$('#varSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === nv));
+  app.pieces.forEach(p => p.fe.set(swapVar(p.fe.latex(), old, nv)));
+  relabel(); renderStatic(); compute();
+}));
+
+/* ---------------- compute ---------------- */
+let computeTimer = null;
+function scheduleCompute() { clearTimeout(computeTimer); computeTimer = setTimeout(compute, 160); }
+function showErrors(errs) {
+  app.pieces.forEach(p => { p.row.classList.remove('bad'); $$('.mq-host', p.row).forEach(h => h.classList.remove('has-err')); const e = $('.piece-err', p.row); e.classList.remove('show'); e.textContent = ''; });
+  $('#periodErr').classList.remove('show'); $('#periodFieldWrap').classList.remove('has-err');
+  const globals = [];
+  for (const er of errs) {
+    if (er.piece >= 0) {
+      const p = app.pieces[er.piece]; if (!p) continue;
+      p.row.classList.add('bad');
+      const host = er.field === 'expr' ? p.fe.host : er.field === 'a' ? p.fa.host : p.fb.host;
+      host.classList.add('has-err');
+      const e = $('.piece-err', p.row);
+      const label = er.field === 'expr' ? '' : (er.field === 'a' ? 'Left bound: ' : 'Right bound: ');
+      e.textContent = (e.textContent ? e.textContent + ' · ' : '') + label + er.msg; e.classList.add('show');
+    } else if (er.field === 'period') { const e = $('#periodErr'); e.textContent = er.msg; e.classList.add('show'); $('#periodFieldWrap').classList.add('has-err'); }
+    else globals.push(er.msg);
+  }
+  return globals;
+}
+function renderStatus(notes, globals) {
+  const host = $('#status'); host.innerHTML = '';
+  for (const g of globals) host.insertAdjacentHTML('beforeend', `<div class="note error"><span class="ic">!</span><span>${esc(g)}</span></div>`);
+  for (const n of notes) host.insertAdjacentHTML('beforeend', `<div class="note ${n.type === 'warn' ? 'warn' : 'info-n'}"><span class="ic">${n.type === 'warn' ? '⚠' : 'i'}</span><span>${esc(n.msg)}</span></div>`);
+}
+function compute() {
+  clearTimeout(computeTimer);
+  const spec = {
+    pieces: app.pieces.map(p => ({ expr: p.fe.latex(), a: p.fa.latex(), b: p.fb.latex() })),
+    periodMode: app.periodMode, periodSrc: periodField ? periodField.latex() : ''
+  };
+  const t0 = performance.now();
+  let m;
+  try { m = C.buildModel(spec); } catch (e) { m = { ok: false, errors: [{ piece: -1, field: 'global', msg: 'Unexpected error: ' + e.message }] }; }
+  if (!m.ok) {
+    const globals = showErrors(m.errors); renderStatus([], globals);
+    $('#plotCard').classList.toggle('stale', !!app.model);
+    return;
+  }
+  showErrors([]);
+  $('#plotCard').classList.remove('stale');
+  m.id = ++app.modelSeq;
+  app.model = m;
+  app.an = C.analyze(m);
+  const ms = performance.now() - t0;
+  $('#perf').textContent = `${NMAX + 1} coefficients · ${m.nSamples.toLocaleString()} quadrature nodes · ${ms.toFixed(1)} ms`;
+  renderStatus(m.notes, []);
+  $('#periodAuto').textContent = 'T = ' + plainNice(m.T);
+  const sig = `${m.start}|${m.T}`;
+  if (!app.userMoved || sig !== app.lastSig) fitView(sig !== app.lastSig || !app.userMoved);
+  app.lastSig = sig;
+  updateFilter(false);
+  updateFormulas();
+  buildTable();
+  updateAnalysis();
+  updateN(true);
+  saveHashSoon();
+}
+function plainNice(v) {
+  const P = C.niceParts(v, 1e-9);
+  if (P.dec !== undefined || P.zero) return C.fmtPlain(v);
+  const s = P.sign < 0 ? '−' : '';
+  const num = (P.num === 1 && P.k > 0 ? '' : P.num) + (P.k > 0 ? (P.k === 1 ? 'π' : `π^${P.k}`) : '');
+  const den = (P.den === 1 ? '' : P.den) + (P.k < 0 ? (P.k === -1 ? 'π' : `π^${-P.k}`) : '');
+  return s + (den ? `${num}/${den}` : num);
+}
+
+/* ---------------- view ---------------- */
+function fitView(resetX = true) {
+  const m = app.model; if (!m) return;
+  const v = app.view;
+  if (resetX) { v.x0 = m.start - m.T; v.x1 = m.start + 2 * m.T; }
+  let lo = Math.min(m.fmin, 0), hi = Math.max(m.fmax, 0);
+  if (app.flt && app.show.out && app.filter.type !== 'none') {
+    const xs = new Float64Array(400); for (let i = 0; i < 400; i++) xs[i] = m.start + m.T * i / 399;
+    const ys = C.seriesEval(xs, new Float64Array(400), app.N, app.flt.A, app.flt.B, m.w0);
+    for (const y of ys) if (isFinite(y)) { lo = Math.min(lo, y); hi = Math.max(hi, y); }
+  }
+  if (hi - lo < 1e-9) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.2; v.y0 = lo - pad; v.y1 = hi + pad;
+  app.userMoved = false;
+  requestRender();
+}
+$('#btnFit').addEventListener('click', () => fitView(true));
+
+/* ---------------- Plot ---------------- */
+const HARM_COLORS = ['#a78bfa', '#34d399', '#fb923c', '#60a5fa', '#f87171', '#facc15', '#2dd4bf', '#e879f9'];
+class Plot {
+  constructor(canvas, ro, role) {
+    this.cv = canvas; this.ctx = canvas.getContext('2d'); this.ro = ro; this.role = role;
+    this.W = 0; this.H = 0; this.cache = {}; this.pointers = new Map();
+    new ResizeObserver(() => { this.resize(); requestRender(); }).observe(canvas);
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId);
+      this.pointers.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
+      canvas.classList.add('grabbing');
+      if (e.pointerType === 'touch') { app.hoverX = this.ix(e.offsetX); requestRender(); }
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = this.pointers.get(e.pointerId);
+      if (p) {
+        if (this.pointers.size === 1) {
+          const v = app.view, dx = (e.offsetX - p.x) / this.W * (v.x1 - v.x0), dy = (e.offsetY - p.y) / this.H * (v.y1 - v.y0);
+          v.x0 -= dx; v.x1 -= dx; v.y0 += dy; v.y1 += dy; app.userMoved = true;
+        } else if (this.pointers.size === 2) {
+          const others = [...this.pointers.entries()].find(([id]) => id !== e.pointerId)[1];
+          const d0 = Math.hypot(p.x - others.x, p.y - others.y), d1 = Math.hypot(e.offsetX - others.x, e.offsetY - others.y);
+          if (d0 > 10 && d1 > 10) this.zoomAt((e.offsetX + others.x) / 2, (e.offsetY + others.y) / 2, d0 / d1, d0 / d1);
+        }
+        p.x = e.offsetX; p.y = e.offsetY;
+      }
+      app.hoverX = this.ix(e.offsetX);
+      requestRender();
+    });
+    const up = e => { this.pointers.delete(e.pointerId); if (!this.pointers.size) canvas.classList.remove('grabbing'); };
+    canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+    canvas.addEventListener('pointerleave', () => { if (!this.pointers.size) { app.hoverX = null; requestRender(); } });
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const f = Math.exp(Math.max(-0.5, Math.min(0.5, e.deltaY * 0.0015)));
+      this.zoomAt(e.offsetX, e.offsetY, e.altKey ? 1 : f, e.shiftKey ? 1 : f);
+    }, { passive: false });
+    canvas.addEventListener('dblclick', () => fitView(true));
+  }
+  zoomAt(px, py, fx, fy) {
+    const v = app.view, cx = this.ix(px), cy = this.iy(py);
+    const nx0 = cx + (v.x0 - cx) * fx, nx1 = cx + (v.x1 - cx) * fx, ny0 = cy + (v.y0 - cy) * fy, ny1 = cy + (v.y1 - cy) * fy;
+    if (nx1 - nx0 < 1e-9 || nx1 - nx0 > 1e7 || ny1 - ny0 < 1e-9 || ny1 - ny0 > 1e9) return;
+    v.x0 = nx0; v.x1 = nx1; v.y0 = ny0; v.y1 = ny1; app.userMoved = true; requestRender();
+  }
+  resize() {
+    const r = this.cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    this.W = Math.max(10, r.width); this.H = Math.max(10, r.height);
+    this.cv.width = Math.round(this.W * dpr); this.cv.height = Math.round(this.H * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.cache = {};
+  }
+  sx(x) { const v = app.view; return (x - v.x0) / (v.x1 - v.x0) * this.W; }
+  sy(y) { const v = app.view; return this.H - (y - v.y0) / (v.y1 - v.y0) * this.H; }
+  ix(px) { const v = app.view; return v.x0 + px / this.W * (v.x1 - v.x0); }
+  iy(py) { const v = app.view; return v.y0 + (this.H - py) / this.H * (v.y1 - v.y0); }
+  xs() {
+    const v = app.view, n = Math.ceil(this.W) + 1, key = `${v.x0}|${v.x1}|${n}`;
+    if (this.cache.xsKey !== key) {
+      const a = new Float64Array(n); for (let i = 0; i < n; i++) a[i] = v.x0 + (v.x1 - v.x0) * i / (n - 1);
+      this.cache = { xsKey: key, xs: a };
+    }
+    return this.cache.xs;
+  }
+  series(kind) {
+    const m = app.model, xs = this.xs();
+    const fl = kind === 'out' ? app.flt : null;
+    const key = `${kind}|${m.id}|${app.N}|${kind === 'out' ? app.flt.key : ''}`;
+    if (this.cache[kind + 'Key'] !== key) {
+      const out = new Float64Array(xs.length);
+      if (kind === 'f') for (let i = 0; i < xs.length; i++) out[i] = m.fp(xs[i]);
+      else C.seriesEval(xs, out, app.N, fl ? fl.A : m.A, fl ? fl.B : m.B, m.w0);
+      this.cache[kind + 'Key'] = key; this.cache[kind] = out;
+    }
+    return this.cache[kind];
+  }
+}
+
+function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p; }
+function piLabel(k) { // k = multiple of pi as fraction
+  const fr = C.toFrac(k, 24, 1e-9); if (!fr) return (k * Math.PI).toPrecision(3);
+  if (fr.p === 0) return '0';
+  const s = fr.p < 0 ? '−' : '', p = Math.abs(fr.p);
+  return s + (p === 1 ? '' : p) + 'π' + (fr.q === 1 ? '' : '/' + fr.q);
+}
+function numLabel(v, step) {
+  if (Math.abs(v) < step * 1e-6) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e5 || a < 1e-3) return v.toExponential(1).replace('-', '−');
+  return (+v.toPrecision(10)).toString().replace('-', '−');
+}
+function drawGrid(pl) {
+  const { ctx, W, H } = pl, v = app.view, m = app.model;
+  ctx.clearRect(0, 0, W, H);
+  const piMode = m && C.toFrac(m.T / Math.PI, 12, 1e-9) !== null;
+  let xstep, xminor;
+  const rawX = (v.x1 - v.x0) / Math.max(2, W / 95);
+  if (piMode) {
+    const cands = [1 / 12, 1 / 8, 1 / 6, 1 / 4, 1 / 3, 1 / 2, 1, 2, 3, 4, 5, 10, 20, 25, 50, 100, 200, 500, 1000];
+    const r = rawX / Math.PI; let c = cands.find(c => c >= r); if (!c) c = niceStep(r);
+    xstep = c * Math.PI; xminor = xstep / (c >= 1 && c % 2 === 0 ? 4 : 2);
+  } else { xstep = niceStep(rawX); xminor = xstep / 5; }
+  const ystep = niceStep((v.y1 - v.y0) / Math.max(2, H / 60)), yminor = ystep / 5;
+  ctx.lineWidth = 1;
+  // minor
+  ctx.strokeStyle = 'rgba(148,163,184,0.055)'; ctx.beginPath();
+  for (let x = Math.ceil(v.x0 / xminor) * xminor; x <= v.x1; x += xminor) { const px = Math.round(pl.sx(x)) + .5; ctx.moveTo(px, 0); ctx.lineTo(px, H); }
+  for (let y = Math.ceil(v.y0 / yminor) * yminor; y <= v.y1; y += yminor) { const py = Math.round(pl.sy(y)) + .5; ctx.moveTo(0, py); ctx.lineTo(W, py); }
+  ctx.stroke();
+  // major
+  ctx.strokeStyle = 'rgba(148,163,184,0.13)'; ctx.beginPath();
+  for (let x = Math.ceil(v.x0 / xstep) * xstep; x <= v.x1; x += xstep) { const px = Math.round(pl.sx(x)) + .5; ctx.moveTo(px, 0); ctx.lineTo(px, H); }
+  for (let y = Math.ceil(v.y0 / ystep) * ystep; y <= v.y1; y += ystep) { const py = Math.round(pl.sy(y)) + .5; ctx.moveTo(0, py); ctx.lineTo(W, py); }
+  ctx.stroke();
+  // period shading: highlight the base period
+  if (m) {
+    const a = pl.sx(m.start), b = pl.sx(m.start + m.T);
+    ctx.fillStyle = 'rgba(139,92,246,0.045)'; ctx.fillRect(a, 0, b - a, H);
+    ctx.strokeStyle = 'rgba(139,92,246,0.35)'; ctx.setLineDash([4, 5]); ctx.beginPath();
+    ctx.moveTo(Math.round(a) + .5, 0); ctx.lineTo(Math.round(a) + .5, H); ctx.moveTo(Math.round(b) + .5, 0); ctx.lineTo(Math.round(b) + .5, H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(196,181,253,0.7)'; ctx.font = '600 10.5px Inter, sans-serif'; ctx.textAlign = 'center';
+    if (b - a > 60) ctx.fillText('one period T', (a + b) / 2, H - 26);
+  }
+  // axes
+  const ax = pl.sy(0), ay = pl.sx(0);
+  ctx.strokeStyle = 'rgba(203,213,225,0.45)'; ctx.lineWidth = 1.2; ctx.beginPath();
+  if (ax >= 0 && ax <= H) { ctx.moveTo(0, Math.round(ax) + .5); ctx.lineTo(W, Math.round(ax) + .5); }
+  if (ay >= 0 && ay <= W) { ctx.moveTo(Math.round(ay) + .5, 0); ctx.lineTo(Math.round(ay) + .5, H); }
+  ctx.stroke();
+  // labels
+  ctx.font = '11px "JetBrains Mono", monospace'; ctx.fillStyle = 'rgba(148,163,184,0.9)';
+  const ly = Math.min(Math.max(ax + 15, 14), H - 6);
+  ctx.textAlign = 'center';
+  for (let x = Math.ceil(v.x0 / xstep) * xstep; x <= v.x1; x += xstep) {
+    if (Math.abs(x) < xstep * 1e-6) continue;
+    const px = pl.sx(x); if (px < 14 || px > W - 14) continue;
+    ctx.fillText(piMode ? piLabel(x / Math.PI) : numLabel(x, xstep), px, ly);
+  }
+  const lx = Math.min(Math.max(ay + 6, 4), W - 40);
+  ctx.textAlign = 'left';
+  for (let y = Math.ceil(v.y0 / ystep) * ystep; y <= v.y1; y += ystep) {
+    if (Math.abs(y) < ystep * 1e-6) continue;
+    const py = pl.sy(y); if (py < 10 || py > H - 6) continue;
+    ctx.fillText(numLabel(y, ystep), lx, py - 3);
+  }
+}
+function strokeCurve(pl, xs, ys, color, width, alpha = 1, dash = null) {
+  const { ctx, H } = pl, v = app.view, kx = pl.W / (v.x1 - v.x0), ky = H / (v.y1 - v.y0);
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.globalAlpha = alpha; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); let pen = false;
+  for (let i = 0; i < xs.length; i++) {
+    const y = ys[i]; if (!isFinite(y)) { pen = false; continue; }
+    const px = (xs[i] - v.x0) * kx, py = Math.max(-5e4, Math.min(5e4, H - (y - v.y0) * ky));
+    if (pen) ctx.lineTo(px, py); else { ctx.moveTo(px, py); pen = true; }
+  }
+  ctx.stroke(); ctx.restore();
+}
+function drawOriginal(pl) {
+  const m = app.model, v = app.view, { ctx } = pl;
+  const jx = m.jumps.map(j => j.x).sort((a, b) => a - b);
+  const periods = (v.x1 - v.x0) / m.T;
+  const paint = (w, a) => { ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = w; ctx.globalAlpha = a; ctx.stroke(); };
+  ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath();
+  if (!jx.length || jx.length > 400 || periods > 150) {
+    ctx.restore();
+    const xs = pl.xs(), ys = pl.series('f');
+    strokeCurve(pl, xs, ys, '#38bdf8', 7, 0.13); strokeCurve(pl, xs, ys, '#38bdf8', 2.4, 0.95);
+    return;
+  }
+  const kx = pl.W / (v.x1 - v.x0), ky = pl.H / (v.y1 - v.y0);
+  const kmin = Math.floor((v.x0 - jx[0]) / m.T) - 1, kmax = Math.ceil((v.x1 - jx[0]) / m.T) + 1;
+  for (let k = kmin; k <= kmax; k++) {
+    for (let i = 0; i < jx.length; i++) {
+      const lo = jx[i] + k * m.T, hi = (i + 1 < jx.length ? jx[i + 1] : jx[0] + m.T) + k * m.T;
+      if (hi <= v.x0 || lo >= v.x1) continue;
+      const a = Math.max(lo, v.x0), b = Math.min(hi, v.x1), e = (hi - lo) * 1e-7;
+      const n = Math.max(1, Math.min(3000, Math.ceil((b - a) * kx / 1.5)));
+      let pen = false;
+      for (let s = 0; s <= n; s++) {
+        let x = a + (b - a) * s / n; x = Math.min(Math.max(x, lo + e), hi - e);
+        const y = m.fp(x); if (!isFinite(y)) { pen = false; continue; }
+        const px = (x - v.x0) * kx, py = Math.max(-5e4, Math.min(5e4, pl.H - (y - v.y0) * ky));
+        if (pen) ctx.lineTo(px, py); else { ctx.moveTo(px, py); pen = true; }
+      }
+    }
+  }
+  paint(7, 0.13); paint(2.4, 0.95);
+  ctx.restore();
+}
+function drawMidpoints(pl) {
+  const m = app.model, v = app.view, { ctx } = pl;
+  if (!m.jumps.length || (v.x1 - v.x0) / m.T > 60) return;
+  ctx.save();
+  for (const j of m.jumps) {
+    const k0 = Math.floor((v.x0 - j.x) / m.T), k1 = Math.ceil((v.x1 - j.x) / m.T);
+    for (let k = k0; k <= k1; k++) {
+      const x = j.x + k * m.T, px = pl.sx(x); if (px < -10 || px > pl.W + 10) continue;
+      ctx.strokeStyle = 'rgba(56,189,248,0.45)'; ctx.setLineDash([2, 3]); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(px, pl.sy(j.L)); ctx.lineTo(px, pl.sy(j.R)); ctx.stroke(); ctx.setLineDash([]);
+      const py = pl.sy((j.L + j.R) / 2);
+      ctx.fillStyle = '#0b1122'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+function drawErrorFill(pl) {
+  const xs = pl.xs(), f = pl.series('f'), s = pl.series('s'), { ctx } = pl, z = pl.sy(0);
+  ctx.save(); ctx.fillStyle = 'rgba(248,113,113,0.22)'; ctx.strokeStyle = 'rgba(248,113,113,0.8)'; ctx.lineWidth = 1;
+  ctx.beginPath(); let open = false, lastPx = 0;
+  for (let i = 0; i < xs.length; i++) {
+    const e = f[i] - s[i], px = pl.sx(xs[i]);
+    if (!isFinite(e)) { if (open) { ctx.lineTo(lastPx, z); ctx.closePath(); open = false; } continue; }
+    const py = Math.max(-5e4, Math.min(5e4, pl.sy(e) - pl.sy(0) + z));
+    if (!open) { ctx.moveTo(px, z); open = true; }
+    ctx.lineTo(px, py); lastPx = px;
+  }
+  if (open) { ctx.lineTo(lastPx, z); ctx.closePath(); }
+  ctx.fill();
+  ctx.restore();
+  const e = new Float64Array(xs.length); for (let i = 0; i < xs.length; i++) e[i] = f[i] - s[i];
+  strokeCurve(pl, xs, e, '#f87171', 1, 0.8);
+}
+function drawHarmonics(pl) {
+  const m = app.model, xs = pl.xs(), K = Math.min(app.N, 8);
+  const ys = new Float64Array(xs.length);
+  if (m.A[0] !== 0) { ys.fill(m.A[0]); strokeCurve(pl, xs, ys, '#cbd5e1', 1.2, 0.6, [6, 5]); }
+  for (let n = 1; n <= K; n++) {
+    const a = m.A[n], b = m.B[n]; if (a === 0 && b === 0) continue;
+    const w = n * m.w0;
+    for (let i = 0; i < xs.length; i++) ys[i] = a * Math.cos(w * xs[i]) + b * Math.sin(w * xs[i]);
+    strokeCurve(pl, xs, ys, HARM_COLORS[(n - 1) % 8], 1.4, 0.75);
+  }
+}
+function drawExtras(pl) {
+  const m = app.model, { ctx } = pl;
+  if (!m) return;
+  if (app.hoverHarm !== null && app.hoverHarm <= NMAX) {
+    const n = app.hoverHarm, xs = pl.xs(), ys = new Float64Array(xs.length);
+    if (n === 0) ys.fill(m.A[0]);
+    else {
+      const a = m.A[n], b = m.B[n], w = n * m.w0;
+      for (let i = 0; i < xs.length; i++) ys[i] = a * Math.cos(w * xs[i]) + b * Math.sin(w * xs[i]);
+    }
+    strokeCurve(pl, xs, ys, '#34d399', 6, 0.22);
+    strokeCurve(pl, xs, ys, '#34d399', 2.2, 0.95);
+  }
+  if (app.hoverGibbs && app.N >= 1 && m.jumps.length) {
+    const g = C.gibbs(m, app.N, m.A, m.B);
+    if (g) {
+      const px = pl.sx(g.peakX), py = pl.sy(g.peakY), ty = pl.sy(g.targetY);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(251,191,36,0.75)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(px - 28, ty); ctx.lineTo(px + 28, ty); ctx.moveTo(px, ty); ctx.lineTo(px, py); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#fbbf24'; ctx.strokeStyle = '#0b1122'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px, py, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+function drawHover(pl, curves) {
+  const ro = pl.ro, m = app.model, v = app.VAR;
+  if (!m) { ro.classList.remove('show'); return; }
+  if (app.hoverX === null) {
+    if (app.hoverHarm !== null && app.hoverHarm <= NMAX) {
+      const n = app.hoverHarm, amp = n === 0 ? Math.abs(m.A[0]) : Math.hypot(m.A[n], m.B[n]);
+      ro.innerHTML = `<div class="row"><span class="dot" style="background:#34d399"></span><b>Harmonic n = ${n}</b> (ω = ${C.fmtPlain(n * m.w0, 4)})</div>` +
+        `<div class="row" style="color:var(--muted)">${n === 0 ? `DC a₀ = ${C.fmtPlain(m.A[0], 5)}` : `A${sub(n)} = ${C.fmtPlain(amp, 5)} · click stem to set N`}</div>`;
+      ro.classList.add('show'); return;
+    }
+    if (app.hoverGibbs && app.N >= 1 && m.jumps.length) {
+      const g = C.gibbs(m, app.N, m.A, m.B);
+      if (g) {
+        ro.innerHTML = `<div class="row"><span class="dot" style="background:#fbbf24"></span><b>Gibbs peak: ${g.pct.toFixed(2)}% overshoot</b></div>` +
+          `<div class="row" style="color:var(--muted)">${v} ≈ ${C.fmtPlain(g.peakX, 4)}, S<sub>${app.N}</sub> = ${C.fmtPlain(g.peakY, 4)} (limit ${C.fmtPlain(g.targetY, 4)})</div>`;
+        ro.classList.add('show'); return;
+      }
+    }
+    ro.classList.remove('show'); return;
+  }
+  const { ctx } = pl, x = app.hoverX, px = pl.sx(x);
+  ctx.save(); ctx.strokeStyle = 'rgba(226,232,240,0.35)'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, pl.H); ctx.stroke(); ctx.setLineDash([]);
+  let html = `<div class="row" style="color:var(--muted)">${v} = ${C.fmtPlain(x, 5)}</div>`;
+  for (const c of curves) {
+    const y = c.fn(x); if (!isFinite(y)) continue;
+    const py = pl.sy(y);
+    if (py > -10 && py < pl.H + 10) { ctx.fillStyle = c.color; ctx.strokeStyle = '#0b1122'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    html += `<div class="row"><span class="dot" style="background:${c.color}"></span>${c.label} = ${C.fmtPlain(y, 5)}</div>`;
+  }
+  ctx.restore();
+  ro.innerHTML = html; ro.classList.add('show');
+}
+function renderPlots() {
+  const m = app.model;
+  const v = app.VAR;
+  const sOK = () => app.show.s;
+  const curvesF = () => ({ fn: x => m.fp(x), color: '#38bdf8', label: `f(${v})` });
+  const curvesS = () => ({ fn: x => C.seriesAt(x, app.N, m.A, m.B, m.w0), color: '#f472b6', label: `S<sub>${app.N}</sub>(${v})` });
+  const curvesY = () => ({ fn: x => C.seriesAt(x, app.N, app.flt.A, app.flt.B, m.w0), color: '#fbbf24', label: `y<sub>${app.N}</sub>(${v})` });
+  const outOn = app.show.out && app.filter.type !== 'none' && app.flt;
+  if (app.layout === 'overlay') {
+    const pl = plots.main; drawGrid(pl); if (!m) return;
+    const hov = [];
+    if (app.show.err) drawErrorFill(pl);
+    if (app.show.harm) drawHarmonics(pl);
+    if (app.show.f) { drawOriginal(pl); hov.push(curvesF()); }
+    if (app.show.mid) drawMidpoints(pl);
+    if (sOK()) { strokeCurve(pl, pl.xs(), pl.series('s'), '#f472b6', 2.2, 1); hov.push(curvesS()); }
+    if (outOn) { strokeCurve(pl, pl.xs(), pl.series('out'), '#fbbf24', 2.2, 1); hov.push(curvesY()); }
+    drawExtras(pl);
+    drawHover(pl, hov);
+  } else {
+    const L = plots.main, R = plots.right;
+    drawGrid(L); drawGrid(R); if (!m) return;
+    const hl = [], hr = [];
+    if (app.show.f) { drawOriginal(L); hl.push(curvesF()); }
+    if (app.show.mid) drawMidpoints(L);
+    if (app.show.err) drawErrorFill(R);
+    if (app.show.harm) drawHarmonics(R);
+    if (app.show.mid) drawMidpoints(R);
+    if (sOK()) { strokeCurve(R, R.xs(), R.series('s'), '#f472b6', 2.2, 1); hr.push(curvesS()); }
+    if (outOn) { strokeCurve(R, R.xs(), R.series('out'), '#fbbf24', 2.2, 1); hr.push(curvesY()); }
+    drawExtras(R);
+    drawHover(L, hl); drawHover(R, hr);
+  }
+}
+
+/* ---------------- spectrum chart ---------------- */
+const spec = { cv: $('#cvSpec'), tip: $('#specTip'), W: 0, H: 0, hover: null };
+spec.ctx = spec.cv.getContext('2d');
+function resizeCanvas(o) {
+  const r = o.cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  o.W = Math.max(10, r.width); o.H = Math.max(10, r.height);
+  o.cv.width = Math.round(o.W * dpr); o.cv.height = Math.round(o.H * dpr); o.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+new ResizeObserver(() => { resizeCanvas(spec); requestRender(); }).observe(spec.cv);
+spec.cv.addEventListener('pointermove', e => { spec.hover = { x: e.offsetX, y: e.offsetY }; requestRender(); });
+spec.cv.addEventListener('pointerleave', () => { spec.hover = null; app.hoverHarm = null; requestRender(); });
+spec.cv.addEventListener('click', () => { if (app.hoverHarm !== null) { stopPlay(); setN(app.hoverHarm); } });
+$('#statGibbs').addEventListener('pointerenter', () => { app.hoverGibbs = true; requestRender(); });
+$('#statGibbs').addEventListener('pointerleave', () => { app.hoverGibbs = false; requestRender(); });
+$('#statGibbs').addEventListener('click', () => { app.hoverGibbs = !app.hoverGibbs; requestRender(); });
+function specValues(A, B, n, mode) {
+  const a = A[Math.abs(n)], b = Math.abs(n) ? B[Math.abs(n)] : 0;
+  if (mode === 'amp') return n === 0 ? Math.abs(a) : Math.hypot(a, b);
+  const cr = n === 0 ? a : a / 2, ci = n === 0 ? 0 : (n > 0 ? -b / 2 : b / 2);
+  if (mode === 'mag') return Math.hypot(cr, ci);
+  return Math.atan2(ci, cr) * 180 / Math.PI;
+}
+function renderSpectrum() {
+  const { ctx, W, H } = spec, m = app.model;
+  ctx.clearRect(0, 0, W, H);
+  if (!m) return;
+  const mode = app.specMode, Nshow = Math.max(app.Nmax, 1), two = mode !== 'amp';
+  const nLo = two ? -Nshow : 0, nHi = Nshow;
+  const padL = 50, padR = (app.flt && app.filter.type !== 'none' && mode !== 'phase') ? 44 : 14, padT = 14, padB = 30;
+  const pw = W - padL - padR, ph = H - padT - padB;
+  const fl = (app.flt && app.filter.type !== 'none') ? app.flt : null;
+  let ymin = 0, ymax = 0;
+  const thrMag = 1e-9 * m.scale;
+  for (let n = nLo; n <= nHi; n++) {
+    const val = specValues(m.A, m.B, n, mode === 'phase' ? 'mag' : mode);
+    ymax = Math.max(ymax, val);
+    if (fl && app.show.out) ymax = Math.max(ymax, specValues(fl.A, fl.B, n, mode === 'phase' ? 'mag' : mode));
+  }
+  if (mode === 'phase') { ymin = -180; ymax = 180; } else { ymax = ymax > 0 ? ymax * 1.12 : 1; }
+  const X = n => padL + (n - nLo + 0.5) / (nHi - nLo + 1) * pw;
+  const Y = y => padT + ph - (y - ymin) / (ymax - ymin) * ph;
+  // grid
+  ctx.font = '10.5px "JetBrains Mono", monospace'; ctx.lineWidth = 1;
+  const ystep = mode === 'phase' ? 90 : niceStep((ymax - ymin) / 5);
+  ctx.textAlign = 'right';
+  for (let y = Math.ceil(ymin / ystep) * ystep; y <= ymax + 1e-12; y += ystep) {
+    const py = Math.round(Y(y)) + .5;
+    ctx.strokeStyle = Math.abs(y) < 1e-12 ? 'rgba(203,213,225,0.4)' : 'rgba(148,163,184,0.1)';
+    ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(W - padR, py); ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.85)'; ctx.fillText(mode === 'phase' ? `${y}°` : numLabel(y, ystep), padL - 6, py + 3.5);
+  }
+  const xstep = Math.max(1, niceStep((nHi - nLo) / Math.max(2, pw / 55)));
+  ctx.textAlign = 'center';
+  for (let n = Math.ceil(nLo / xstep) * xstep; n <= nHi; n += xstep) { ctx.fillStyle = 'rgba(148,163,184,0.85)'; ctx.fillText(String(n), X(n), H - padB + 15); }
+  ctx.fillStyle = 'rgba(148,163,184,0.6)'; ctx.fillText(`harmonic n   (ω = n·ω₀, ω₀ = ${plainNice(m.w0)})`, padL + pw / 2, H - 4);
+  // |H| curve on secondary axis
+  if (fl && mode !== 'phase') {
+    let hmax = 0; const K = 300, pts = [];
+    for (let k = 0; k <= K; k++) { const n = nLo + (nHi - nLo) * k / K, h = fl.H(n * m.w0), mag = Math.hypot(h[0], h[1]); pts.push([n, mag]); if (isFinite(mag)) hmax = Math.max(hmax, mag); }
+    hmax = hmax > 0 ? hmax * 1.12 : 1;
+    ctx.save(); ctx.strokeStyle = 'rgba(251,191,36,0.75)'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.beginPath();
+    pts.forEach(([n, mag], k) => { const px = X(n), py = padT + ph - Math.min(mag / hmax, 1.05) * ph; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    ctx.stroke(); ctx.restore();
+    ctx.fillStyle = 'rgba(251,191,36,0.85)'; ctx.textAlign = 'left';
+    ctx.fillText('|H|', W - padR + 6, padT + 8); ctx.fillText(numLabel(hmax / 1.12, hmax), W - padR + 4, Y(ymax / 1.12) + 12);
+  }
+  // stems
+  const count = nHi - nLo + 1, gap = pw / count;
+  const lw = Math.max(1, Math.min(5, gap * 0.4));
+  const drawStems = (A, B, colorIn, colorOut, offset, widthMul) => {
+    for (let n = nLo; n <= nHi; n++) {
+      const mag = specValues(A, B, n, 'mag');
+      let val = specValues(A, B, n, mode);
+      if (mode === 'phase' && mag < thrMag) continue;
+      if (mode !== 'phase' && val <= 0) continue;
+      const inside = Math.abs(n) <= app.N, px = X(n) + offset;
+      ctx.strokeStyle = inside ? colorIn : colorOut; ctx.lineWidth = lw * widthMul;
+      ctx.beginPath(); ctx.moveTo(px, Y(mode === 'phase' ? 0 : 0)); ctx.lineTo(px, Y(val)); ctx.stroke();
+      if (gap > 5) { ctx.fillStyle = inside ? colorIn : colorOut; ctx.beginPath(); ctx.arc(px, Y(val), Math.min(3.5, gap * 0.3) * widthMul, 0, Math.PI * 2); ctx.fill(); }
+    }
+  };
+  drawStems(m.A, m.B, '#f472b6', 'rgba(148,163,184,0.35)', 0, 1);
+  if (fl && app.show.out) drawStems(fl.A, fl.B, '#fbbf24', 'rgba(251,191,36,0.3)', Math.min(gap * 0.28, 6), 0.75);
+  // hover tooltip
+  if (spec.hover) {
+    const n = Math.round(nLo + (spec.hover.x - padL) / pw * count - 0.5);
+    if (n >= nLo && n <= nHi && spec.hover.x > padL && spec.hover.x < W - padR) {
+      app.hoverHarm = Math.abs(n);
+      const px = X(n);
+      ctx.fillStyle = 'rgba(52,211,153,0.14)'; ctx.fillRect(px - gap / 2, padT, gap, ph);
+      const lab = mode === 'amp' ? (n === 0 ? 'A₀ = |a₀|' : `A${sub(n)}`) : mode === 'mag' ? `|c${sub(n)}|` : `∠c${sub(n)}`;
+      const val = specValues(m.A, m.B, n, mode), mag = specValues(m.A, m.B, n, 'mag');
+      let txt = `<b>n = ${n}</b>  ω = ${C.fmtPlain(n * m.w0, 4)}<br>${lab} = ${mode === 'phase' ? (mag < thrMag ? 'undefined' : C.fmtPlain(val, 4) + '°') : C.fmtPlain(val, 5)}`;
+      if (mode !== 'phase') txt += `<br>power: ${C.fmtPlain(n === 0 ? val * val : (mode === 'amp' ? val * val / 2 : val * val), 4)}`;
+      if (fl) { const h = fl.H(n * m.w0); txt += `<br><span style="color:#fbbf24">|H| = ${C.fmtPlain(Math.hypot(h[0], h[1]), 4)}, ∠H = ${C.fmtPlain(Math.atan2(h[1], h[0]) * 180 / Math.PI, 4)}°</span>`; }
+      txt += `<br><span style="color:#6ee7b7">previewed on plot · click to set N = ${Math.abs(n)}</span>`;
+      spec.tip.innerHTML = txt; spec.tip.classList.add('show');
+      const tw = spec.tip.offsetWidth;
+      spec.tip.style.left = Math.min(W - tw - 6, Math.max(6, px + 12)) + 'px'; spec.tip.style.top = '10px';
+    } else { app.hoverHarm = null; spec.tip.classList.remove('show'); }
+  } else { app.hoverHarm = null; spec.tip.classList.remove('show'); }
+}
+const SUBS = '₀₁₂₃₄₅₆₇₈₉';
+const sub = n => (n < 0 ? '₋' : '') + String(Math.abs(n)).split('').map(d => SUBS[+d]).join('');
+
+/* ---------------- convergence chart ---------------- */
+const conv = { cv: $('#cvConv'), tip: $('#convTip'), W: 0, H: 0, hover: null };
+conv.ctx = conv.cv.getContext('2d');
+new ResizeObserver(() => { resizeCanvas(conv); requestRender(); }).observe(conv.cv);
+conv.cv.addEventListener('pointermove', e => { conv.hover = { x: e.offsetX }; requestRender(); });
+conv.cv.addEventListener('pointerleave', () => { conv.hover = null; requestRender(); });
+conv.cv.addEventListener('click', e => { if (conv.lastMap) setN(conv.lastMap(e.offsetX)); });
+function relErr(m, N) { const e2 = Math.max(0, m.power - m.cum[N]); return m.power > 0 ? Math.sqrt(e2 / m.power) : 0; }
+function renderConv() {
+  const { ctx, W, H } = conv, m = app.model;
+  ctx.clearRect(0, 0, W, H); if (!m) return;
+  const padL = 50, padR = 14, padT = 12, padB = 26, pw = W - padL - padR, ph = H - padT - padB, Nm = app.Nmax;
+  const vals = []; let lmin = 0;
+  for (let n = 0; n <= Nm; n++) { const r = Math.max(relErr(m, n), 1e-7); vals.push(r); lmin = Math.min(lmin, Math.log10(r)); }
+  lmin = Math.floor(Math.max(lmin, -7)); if (lmin > -1) lmin = -1;
+  const lmax = 0.15;
+  const X = n => padL + n / Math.max(1, Nm) * pw, Y = r => padT + ph - (Math.log10(r) - lmin) / (lmax - lmin) * ph;
+  conv.lastMap = px => Math.round(Math.max(0, Math.min(Nm, (px - padL) / pw * Nm)));
+  ctx.font = '10.5px "JetBrains Mono", monospace'; ctx.textAlign = 'right';
+  for (let d = lmin; d <= 0; d++) {
+    const py = Math.round(Y(Math.pow(10, d))) + .5;
+    ctx.strokeStyle = 'rgba(148,163,184,0.1)'; ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(W - padR, py); ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.85)'; ctx.fillText(d >= -2 ? `${+(100 * Math.pow(10, d)).toPrecision(3)}%` : `1e${d + 2}%`, padL - 6, py + 3.5);
+  }
+  ctx.textAlign = 'center';
+  const xs = Math.max(1, niceStep(Nm / Math.max(2, pw / 60)));
+  for (let n = 0; n <= Nm; n += xs) ctx.fillText(String(n), X(n), H - padB + 14);
+  ctx.fillStyle = 'rgba(148,163,184,0.6)'; ctx.fillText('N', W - padR - 4, H - 6);
+  // area + line
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + ph); grad.addColorStop(0, 'rgba(139,92,246,0.35)'); grad.addColorStop(1, 'rgba(139,92,246,0)');
+  ctx.beginPath(); ctx.moveTo(X(0), padT + ph);
+  for (let n = 0; n <= Nm; n++) { ctx.lineTo(X(n), Y(vals[n])); if (n < Nm) ctx.lineTo(X(n + 1), Y(vals[n])); }
+  ctx.lineTo(X(Nm), padT + ph); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath();
+  for (let n = 0; n <= Nm; n++) { const px = X(n), py = Y(vals[n]); n ? ctx.lineTo(px, py) : ctx.moveTo(px, py); if (n < Nm) ctx.lineTo(X(n + 1), py); }
+  ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 1.8; ctx.stroke();
+  // marker
+  const n0 = Math.min(app.N, Nm), mx = X(n0), my = Y(vals[n0]);
+  ctx.strokeStyle = 'rgba(244,114,182,0.5)'; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(mx, padT); ctx.lineTo(mx, padT + ph); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#f472b6'; ctx.strokeStyle = '#0b1122'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx, my, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  if (conv.hover) {
+    const n = conv.lastMap(conv.hover.x);
+    conv.tip.innerHTML = `N = ${n}<br>rel. RMS error = ${C.fmtPlain(100 * relErr(m, n), 4)}%<br>power captured = ${C.fmtPlain(100 * (m.power > 0 ? Math.min(1, m.cum[n] / m.power) : 1), 6)}%<br><span style="color:var(--muted)">click to set N</span>`;
+    conv.tip.classList.add('show'); const tw = conv.tip.offsetWidth;
+    conv.tip.style.left = Math.min(W - tw - 6, Math.max(6, X(n) + 12)) + 'px'; conv.tip.style.top = '8px';
+  } else conv.tip.classList.remove('show');
+}
+
+/* ---------------- Web Audio synthesizer ---------------- */
+let audioCtx = null, audioOsc = null, audioGain = null;
+function updateAudio() {
+  if (!app.audioOn || !app.model) return;
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { toast('Web Audio API is not supported in this browser'); app.audioOn = false; $('#btnAudio').classList.remove('on'); return; }
+    audioCtx = new AC();
+    audioGain = audioCtx.createGain();
+    audioGain.gain.value = 0;
+    audioGain.connect(audioCtx.destination);
+    audioOsc = audioCtx.createOscillator();
+    audioOsc.frequency.value = 220;
+    audioOsc.connect(audioGain);
+    audioOsc.start();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const m = app.model, N = Math.max(1, app.N);
+  const src = (app.show.out && app.filter.type !== 'none' && app.flt) ? app.flt : m;
+  const real = new Float32Array(N + 1), imag = new Float32Array(N + 1);
+  let hasAC = false;
+  for (let n = 1; n <= app.N; n++) {
+    real[n] = src.A[n]; imag[n] = src.B[n];
+    if (Math.abs(real[n]) > 1e-12 || Math.abs(imag[n]) > 1e-12) hasAC = true;
+  }
+  if (!hasAC) {
+    audioGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+  } else {
+    try {
+      const wave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: false });
+      audioOsc.setPeriodicWave(wave);
+      audioGain.gain.setTargetAtTime(0.16, audioCtx.currentTime, 0.02);
+    } catch (e) { /* ignore */ }
+  }
+}
+$('#btnAudio').addEventListener('click', () => {
+  app.audioOn = !app.audioOn;
+  $('#btnAudio').classList.toggle('on', app.audioOn);
+  $('#audioLbl').textContent = app.audioOn ? 'Playing 220 Hz' : 'Listen';
+  if (app.audioOn) updateAudio();
+  else if (audioGain && audioCtx) audioGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+});
+
+/* ---------------- render loop ---------------- */
+let rafPending = false;
+function requestRender() { if (!rafPending) { rafPending = true; requestAnimationFrame(frame); } }
+function frame(t) {
+  rafPending = false;
+  if (app.playing) stepPlay(t);
+  renderPlots(); renderSpectrum(); renderConv();
+  if (app.playing) requestRender();
+}
+
+/* ---------------- N control ---------------- */
+const nSlider = $('#nSlider'), nInput = $('#nInput');
+function setN(n, fromInput = false) {
+  n = Math.max(0, Math.min(NMAX, Math.round(+n || 0)));
+  if (n > app.Nmax) { const opts = [10, 25, 50, 100, 200, 500]; app.Nmax = opts.find(o => o >= n); $('#nMax').value = app.Nmax; nSlider.max = app.Nmax; }
+  if (n === app.N && !fromInput) { updateN(false); return; }
+  app.N = n; updateN(false);
+}
+let nUpdatePending = false;
+function updateN(force) {
+  nSlider.value = app.N; nSlider.style.setProperty('--p', (app.N / app.Nmax * 100) + '%');
+  if (document.activeElement !== nInput) nInput.value = app.N;
+  $('#nValue').textContent = `N = ${app.N}`; $('#nInline').textContent = app.N;
+  $('#dimStyle').textContent = `#coefBody tr:nth-child(n+${app.N + 2}) td{opacity:.32}`;
+  requestRender();
+  if (force) { doNUpdate(); return; }
+  if (!nUpdatePending) { nUpdatePending = true; requestAnimationFrame(() => { nUpdatePending = false; doNUpdate(); }); }
+}
+function doNUpdate() {
+  const m = app.model; if (!m) return;
+  updateStats(); updateExpanded(); updateOutputPanel(); updateSpecNote(); updateAudio();
+}
+nSlider.addEventListener('input', () => { stopPlay(); setN(nSlider.value); });
+nInput.addEventListener('input', () => { if (nInput.value !== '') { stopPlay(); setN(nInput.value, true); } });
+nInput.addEventListener('blur', () => { nInput.value = app.N; });
+$('#nMinus').addEventListener('click', () => { stopPlay(); setN(app.N - 1); });
+$('#nPlus').addEventListener('click', () => { stopPlay(); setN(app.N + 1); });
+$('#nMax').addEventListener('change', e => {
+  app.Nmax = +e.target.value; nSlider.max = app.Nmax;
+  if (app.N > app.Nmax) app.N = app.Nmax;
+  updateN(true);
+});
+let playAcc = 0, playLast = 0;
+$('#nPlay').addEventListener('click', () => (app.playing ? stopPlay() : startPlay()));
+function startPlay() {
+  if (app.N >= app.Nmax) app.N = 0;
+  app.playing = true; playAcc = 0; playLast = 0;
+  $('#playIcon').innerHTML = '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+  updateN(false); requestRender();
+}
+function stopPlay() {
+  if (!app.playing) return;
+  app.playing = false; $('#playIcon').innerHTML = '<path d="M7 4.5v15l13-7.5z"/>';
+}
+function stepPlay(t) {
+  if (!playLast) { playLast = t; return; }
+  const speed = +$('#nSpeed').value;
+  playAcc += (t - playLast) / 1000 * speed; playLast = t;
+  if (playAcc >= 1) {
+    const k = Math.floor(playAcc); playAcc -= k;
+    const n = Math.min(app.Nmax, app.N + k);
+    app.N = n; updateN(false);
+    if (n >= app.Nmax) stopPlay();
+  }
+}
+document.addEventListener('keydown', e => {
+  const a = document.activeElement;
+  if (a && (a.closest('.mq-editable-field') || /INPUT|TEXTAREA|SELECT/.test(a.tagName))) return;
+  if (e.key === 'Escape') { $('#helpModal').classList.remove('show'); return; }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); stopPlay(); setN(app.N + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); stopPlay(); setN(app.N - 1); }
+  else if (e.key === ' ') { e.preventDefault(); app.playing ? stopPlay() : startPlay(); }
+  else if (e.key === 'f' || e.key === 'F') fitView(true);
+});
+
+/* ---------------- toggles ---------------- */
+$$('#chips .chip').forEach(ch => ch.addEventListener('click', () => {
+  const k = ch.dataset.k; app.show[k] = !app.show[k]; ch.classList.toggle('on', app.show[k]);
+  if (k === 'harm') updateHarmLegend();
+  if (k === 'out') { updateSpecNote(); updateAudio(); }
+  requestRender();
+}));
+function updateHarmLegend() {
+  const el = $('#harmLegend'), m = app.model;
+  if (!app.show.harm || !m) { el.classList.remove('show'); return; }
+  let h = m.A[0] !== 0 ? `<span><i style="background:#cbd5e1"></i>DC a₀</span>` : '';
+  for (let n = 1; n <= Math.min(8, app.N); n++) if (m.A[n] || m.B[n]) h += `<span><i style="background:${HARM_COLORS[(n - 1) % 8]}"></i>n = ${n}</span>`;
+  h += `<span style="opacity:.7">(first 8 harmonics; their sum is S<sub>N</sub>)</span>`;
+  el.innerHTML = h; el.classList.add('show');
+}
+const plots = {};
+$$('#layoutSeg button').forEach(b => b.addEventListener('click', () => {
+  app.layout = b.dataset.v;
+  $$('#layoutSeg button').forEach(x => x.classList.toggle('on', x === b));
+  const split = app.layout === 'split';
+  $('#plotWrap').classList.toggle('split', split);
+  $('#boxRight').style.display = split ? '' : 'none';
+  $('#titleMain').style.display = split ? '' : 'none';
+  requestAnimationFrame(() => { plots.main.resize(); plots.right.resize(); requestRender(); });
+}));
+$$('#specTabs button').forEach(b => b.addEventListener('click', () => { app.specMode = b.dataset.v; $$('#specTabs button').forEach(x => x.classList.toggle('on', x === b)); updateSpecNote(); requestRender(); }));
+$$('#formTabs button').forEach(b => b.addEventListener('click', () => { app.formMode = b.dataset.v; $$('#formTabs button').forEach(x => x.classList.toggle('on', x === b)); updateSeriesForm(); updateExpanded(); }));
+
+/* ---------------- stats ---------------- */
+function updateStats() {
+  const m = app.model, N = app.N;
+  const cap = m.power > 0 ? Math.min(1, m.cum[N] / m.power) : 1;
+  $('#stCaptured').textContent = (100 * cap).toFixed(cap > 0.9999 ? 4 : 2) + '%';
+  $('#stCapturedBar').style.width = (100 * cap) + '%';
+  const e = Math.sqrt(Math.max(0, m.power - m.cum[N]));
+  $('#stRms').textContent = C.fmtPlain(e, 4);
+  $('#stRmsRel').textContent = `${C.fmtPlain(100 * relErr(m, N), 3)}% of RMS(f) = ${C.fmtPlain(Math.sqrt(m.power), 4)}`;
+  $('#stPower').textContent = C.fmtPlain(m.power, 5);
+  $('#stPowerD').textContent = `RMS = √P = ${C.fmtPlain(Math.sqrt(m.power), 5)}`;
+  const g = C.gibbs(m, N, m.A, m.B);
+  if (!m.jumps.length) { $('#stGibbs').textContent = 'none'; $('#stGibbsD').textContent = 'no jumps → uniform convergence'; }
+  else if (!g) { $('#stGibbs').textContent = '—'; $('#stGibbsD').textContent = 'increase N'; }
+  else { $('#stGibbs').textContent = g.pct.toFixed(2) + '%'; $('#stGibbsD').textContent = `of jump ${C.fmtPlain(g.size, 3)} at ${app.VAR} = ${plainNice(g.x)} (→ 8.95%)`; }
+  updateHarmLegend();
+}
+
+/* ---------------- formulas ---------------- */
+function coefFactor(k, T) { return C.niceLatex(k / T); }  // e.g. 2/T
+function wrapNeg(s) { return /^[-]/.test(s) || /[+-]/.test(s.slice(1)) ? `\\left(${s}\\right)` : s; }
+function updateFormulas() {
+  const m = app.model, v = app.VAR, an = app.an;
+  const Tl = C.niceLatex(m.T), w0l = C.niceLatex(m.w0), s0 = C.niceLatex(m.start), s1 = C.niceLatex(m.start + m.T);
+  // signal (cases)
+  const segRows = [];
+  for (const s of m.segs) {
+    const lo = C.niceLatex(s.lo), hi = C.niceLatex(s.hi);
+    segRows.push(`${s.gap ? '0' : s.piece.latex} & ${lo} < ${v} < ${hi}`);
+  }
+  const sigL = segRows.length === 1 ? `f(${v}) = ${m.segs[0].piece.latex},\\quad ${C.niceLatex(m.segs[0].lo)} < ${v} < ${C.niceLatex(m.segs[0].hi)}`
+    : `f(${v}) = \\begin{cases} ${segRows.join(' \\\\ ')} \\end{cases}`;
+  $('#mSignal').innerHTML = texStr(sigL, true) + texStr(`f(${v} + T) = f(${v}),\\quad T = ${Tl},\\quad \\omega_0 = \\frac{2\\pi}{T} = ${w0l}${v === 't' ? '\\ \\text{rad/s}' : ''}`, true);
+  // definitions
+  const lim = `\\int_{${s0}}^{${s1}}`;
+  $('#mGeneral').innerHTML =
+    texStr(`a_0 = \\frac{1}{T}${lim} f(${v})\\,d${v}`, true) +
+    texStr(`a_n = \\frac{2}{T}${lim} f(${v})\\cos(n\\omega_0 ${v})\\,d${v},\\qquad b_n = \\frac{2}{T}${lim} f(${v})\\sin(n\\omega_0 ${v})\\,d${v}`, true) +
+    texStr(`c_n = \\frac{1}{T}${lim} f(${v})\\,e^{-jn\\omega_0 ${v}}\\,d${v}`, true);
+  // applied to pieces
+  const arg = C.argSymbolic(C.niceParts(m.w0, 1e-9), v);
+  const ints = (kern) => m.pieces.map(p => `\\int_{${p.aLatex || C.niceLatex(p.a)}}^{${p.bLatex || C.niceLatex(p.b)}} ${wrapNeg(p.latex)}${kern}\\,d${v}`).join(' + ');
+  const one = m.pieces.length === 1;
+  const br = s => one ? s : `\\left[${s}\\right]`;
+  const f1 = coefFactor(1, m.T), f2 = coefFactor(2, m.T);
+  const fac = x => (x === '1' ? '' : x);
+  $('#mPieces').innerHTML =
+    texStr(`a_0 = ${fac(f1)}${br(ints(''))}`, true) +
+    texStr(`a_n = ${fac(f2)}${br(ints(`\\cos\\left(${arg}\\right)`))}`, true) +
+    texStr(`b_n = ${fac(f2)}${br(ints(`\\sin\\left(${arg}\\right)`))}`, true) +
+    (m.segs.some(s => s.gap) ? `<div class="conv-note">Uncovered parts of the period (f = 0) contribute nothing to the integrals.</div>` : '');
+  // results
+  let exact = true;
+  const recLines = (rec, sym) => {
+    if (rec.type === 'zero') return [`${sym}_n = 0 \\quad \\text{for all } n \\ge 1`];
+    if (rec.type === 'finite') return [rec.terms.map(t => `${sym}_{${t.n}} = ${C.niceLatex(t.v, 1e-8)}`).join(',\\quad ') + `,\\quad \\text{all other } ${sym}_n = 0`];
+    if (rec.type === 'pattern') {
+      const p = C.patternLatex(rec);
+      let cond = '';
+      if (p.parity === 'odd') cond = `\\quad (n \\text{ odd}),\\qquad ${sym}_n = 0\\ (n \\text{ even})`;
+      else if (p.parity === 'even') cond = `\\quad (n \\text{ even}),\\qquad ${sym}_n = 0\\ (n \\text{ odd})`;
+      if (p.startN === 2) cond += `\\quad (n \\ge 2)`;
+      const lines = [`${sym}_n = ${p.expr}${cond}`];
+      for (const e of p.exc) lines.push(`${sym}_{${e.n}} = ${C.niceLatex(e.v, 1e-8)}`);
+      return lines;
+    }
+    exact = false;
+    return [`${sym}_n:\\ \\text{no simple closed form detected — see the table}`];
+  };
+  const a0 = C.niceParts(m.A[0], 1e-8);
+  if (a0.dec !== undefined) exact = false;
+  const lines = [`a_0 = ${C.partsLatex(a0)}`, ...recLines(an.recA, 'a'), ...recLines(an.recB, 'b')];
+  $('#mResults').innerHTML = lines.map(l => `<div class="math-line">${texStr(l, false)}</div>`).join('') +
+    `<div class="math-line">${texStr('c_0 = a_0,\\qquad c_n = \\tfrac{1}{2}(a_n - j\\,b_n),\\qquad c_{-n} = c_n^{*}', false)}</div>`;
+  const tag = $('#resTag');
+  tag.className = 'tag ' + (exact ? 'exact' : 'numeric');
+  tag.textContent = exact ? 'exact form detected' : 'numerical';
+  tag.title = exact ? 'The numerical coefficients match this exact formula for n = 1…60 and spot checks up to n = 377 (to ~10⁻⁷).' : 'No closed form detected. Values are computed numerically to high precision.';
+  updateSeriesForm();
+  updateFilterLatex();
+}
+function joinTerms(terms) {
+  let s = '';
+  terms.forEach((t, i) => { if (!t) return; if (!s) s = t; else s += t.startsWith('-') ? ' ' + t : ' + ' + t; });
+  return s || '0';
+}
+function coefTimes(cLatex, trig) {
+  if (cLatex === '1') return trig;
+  if (cLatex === '-1') return '-' + trig;
+  return `${cLatex}\\,${trig}`;
+}
+function sumSub(par, startN = 1) {
+  if (par === 'odd') return startN > 1 ? 'n=3,5,7,\\dots' : 'n=1,3,5,\\dots';
+  if (par === 'even') return 'n=2,4,6,\\dots';
+  return `n=${startN || 1}`;
+}
+function singleSum(p, trig) {
+  let term = coefTimes(p.expr, trig), sign = '';
+  if (term.startsWith('-')) { sign = '-'; term = term.slice(1).trim(); }
+  return `${sign}\\sum_{${sumSub(p.parity, p.startN)}}^{\\infty} ${term}`;
+}
+function updateSeriesForm() {
+  const m = app.model; if (!m) return;
+  const v = app.VAR, an = app.an, W = C.niceParts(m.w0, 1e-9), arg = C.argSymbolic(W, v);
+  const a0 = C.niceLatex(m.A[0], 1e-8), a0num = C.fmt(m.A[0], 5);
+  const a0s = C.niceParts(m.A[0], 1e-8).dec !== undefined ? a0num : a0;
+  let L = '';
+  const cosT = `\\cos\\left(${arg}\\right)`, sinT = `\\sin\\left(${arg}\\right)`;
+  if (app.formMode === 'trig') {
+    const rA = an.recA, rB = an.recB;
+    let body = null;
+    if (rA.type !== 'numeric' && rB.type !== 'numeric') {
+      const disc = [], all = [], zt = 1e-9 * m.scale;
+      if (rA.type === 'finite') rA.terms.forEach(t => all.push({ n: t.n, k: 'c', v: t.v }));
+      else if (rA.type === 'pattern' && rA.exc) rA.exc.forEach(t => { if (Math.abs(t.v) > zt) all.push({ n: t.n, k: 'c', v: t.v }); });
+      if (rB.type === 'finite') rB.terms.forEach(t => all.push({ n: t.n, k: 's', v: t.v }));
+      else if (rB.type === 'pattern' && rB.exc) rB.exc.forEach(t => { if (Math.abs(t.v) > zt) all.push({ n: t.n, k: 's', v: t.v }); });
+      all.sort((p, q) => p.n - q.n || (p.k === 'c' ? -1 : 1));
+      for (const t of all) disc.push(coefTimes(C.niceLatex(t.v, 1e-8), `\\${t.k === 'c' ? 'cos' : 'sin'}\\left(${C.argNumeric(t.n * m.w0, v)}\\right)`));
+      const pA = rA.type === 'pattern' ? C.patternLatex(rA) : null;
+      const pB = rB.type === 'pattern' ? C.patternLatex(rB) : null;
+      const sums = [];
+      if (pA && pB && pA.parity === pB.parity && pA.startN === pB.startN) {
+        const inner = joinTerms([coefTimes(pA.expr, cosT), coefTimes(pB.expr, sinT)]);
+        sums.push(`\\sum_{${sumSub(pA.parity, pA.startN)}}^{\\infty}\\left[${inner}\\right]`);
+      } else {
+        if (pA) sums.push(singleSum(pA, cosT));
+        if (pB) sums.push(singleSum(pB, sinT));
+      }
+      body = joinTerms([a0 === '0' ? '' : a0s, ...disc, ...sums]);
+      L = `f(${v}) = ${body}`;
+    }
+    if (!body) L = `f(${v}) = ${a0 === '0' ? '' : a0s + ' + '}\\sum_{n=1}^{\\infty}\\left[a_n ${cosT} + b_n ${sinT}\\right]`;
+    $('#mSeries').innerHTML = texStr(L.replace('+ -', '- '), true) +
+      `<div class="conv-note">${body ? 'Closed form built from the detected coefficient formulas.' : 'With aₙ, bₙ from the result panel or the table.'} Truncating the sum at n = N gives S<sub>N</sub>(${v}).</div>`;
+  } else if (app.formMode === 'amp') {
+    L = `f(${v}) = ${a0 === '0' ? '' : a0s + ' + '}\\sum_{n=1}^{\\infty} A_n \\cos\\left(${arg} + \\varphi_n\\right),\\qquad A_n = \\sqrt{a_n^2+b_n^2},\\ \\ \\varphi_n = -\\operatorname{atan2}(b_n, a_n)`;
+    $('#mSeries').innerHTML = texStr(L, true) + `<div class="conv-note">Each harmonic is a single cosine with amplitude Aₙ and phase φₙ. This is what an oscilloscope or spectrum analyser "sees".</div>`;
+  } else {
+    L = `f(${v}) = \\sum_{n=-\\infty}^{\\infty} c_n\\, e^{j${arg}},\\qquad c_n = \\frac{a_n - j b_n}{2},\\ \\ c_{-n} = c_n^{*}`;
+    $('#mSeries').innerHTML = texStr(L, true) + `<div class="conv-note">The two-sided form uses negative frequencies. For a real signal the terms at ±n pair up into one real cosine: c<sub>n</sub>e<sup>jnω₀${v}</sup> + c<sub>−n</sub>e<sup>−jnω₀${v}</sup> = A<sub>n</sub>cos(nω₀${v} + φ<sub>n</sub>).</div>`;
+  }
+  $('#mRelations').innerHTML = texStr(`A_n = 2|c_n| = \\sqrt{a_n^2+b_n^2},\\quad a_n = 2\\,\\mathrm{Re}\\,c_n,\\quad b_n = -2\\,\\mathrm{Im}\\,c_n,\\quad \\varphi_n = \\angle c_n`, true);
+}
+function shortNum(v) { return String(+v.toPrecision(4)); }
+function updateExpanded() {
+  const m = app.model; if (!m) return;
+  const v = app.VAR, N = app.N, maxTerms = 7;
+  const terms = []; let count = 0, shown = 0;
+  const a0 = m.A[0];
+  if (a0 !== 0) { terms.push(shortNum(a0)); }
+  const cand = [];
+  for (let n = 1; n <= N; n++) {
+    if (app.formMode === 'trig') {
+      if (m.A[n] !== 0) cand.push({ n, c: m.A[n], t: 'cos' });
+      if (m.B[n] !== 0) cand.push({ n, c: m.B[n], t: 'sin' });
+    } else if (app.formMode === 'amp') {
+      const A = Math.hypot(m.A[n], m.B[n]); if (A !== 0) cand.push({ n, c: A, ph: -Math.atan2(m.B[n], m.A[n]) });
+    } else {
+      const cr = m.A[n] / 2, ci = -m.B[n] / 2; if (cr !== 0 || ci !== 0) cand.push({ n, cr, ci });
+    }
+  }
+  count = cand.length;
+  for (const c of cand) {
+    if (shown >= maxTerms) break; shown++;
+    const argL = C.argNumeric(c.n * m.w0, v);
+    if (app.formMode === 'trig') {
+      const coef = Math.abs(Math.abs(c.c) - 1) < 1e-12 ? (c.c < 0 ? '-' : '') : shortNum(c.c);
+      terms.push(`${coef}\\${c.t}\\left(${argL}\\right)`);
+    } else if (app.formMode === 'amp') {
+      const ph = c.ph, phs = Math.abs(ph) < 1e-12 ? '' : (ph < 0 ? ' - ' : ' + ') + shortNum(Math.abs(ph));
+      terms.push(`${shortNum(c.c)}\\cos\\left(${argL}${phs}\\right)`);
+    } else {
+      const z = (cr, ci) => { if (ci === 0) return shortNum(cr); if (cr === 0) return `${shortNum(ci)}j`; return `(${shortNum(cr)} ${ci < 0 ? '-' : '+'} ${shortNum(Math.abs(ci))}j)`; };
+      terms.push(`${z(c.cr, c.ci)}e^{j${argL}} + ${z(c.cr, -c.ci)}e^{-j${argL}}`);
+    }
+  }
+  let s = joinTerms(terms);
+  if (count > shown) s += ' + \\cdots';
+  const lhs = `S_{${N}}(${v})`;
+  $('#mExpanded').innerHTML = texStr(`${lhs} = ${s}`, true) +
+    `<div class="conv-note">${count} non-zero ${app.formMode === 'trig' ? 'term' : 'harmonic'}${count === 1 ? '' : 's'} with n ≤ ${N}${count > shown ? ` (first ${shown} shown, coefficients rounded to 4 significant digits)` : ''}.</div>`;
+}
+function updateSpecNote() {
+  const m = app.model; if (!m) return;
+  const notes = {
+    amp: `One-sided amplitude spectrum: A₀ = |a₀| (DC), Aₙ = √(aₙ² + bₙ²). Harmonic n carries power Aₙ²/2.`,
+    mag: `Two-sided magnitude spectrum |cₙ| for −N…N. It is symmetric because the signal is real (c₋ₙ = cₙ*), and |cₙ|² summed over all n equals the average power.`,
+    phase: `Phase ∠cₙ in degrees (odd symmetry for real signals). Harmonics with zero magnitude have no defined phase and are not drawn. A time shift changes the phases but not the magnitudes.`
+  };
+  let s = notes[app.specMode];
+  if (app.filter.type !== 'none') s += ` Amber: system output and |H(jnω₀)|${app.show.out ? '' : ' (enable "LTI output y" to see output stems)'}.`;
+  $('#specNote').textContent = s;
+}
+function updateAnalysis() {
+  const m = app.model, an = app.an, v = app.VAR;
+  const SYM = {
+    dc: ['=', '#94a3b8', 'Constant signal', 'Only the DC term a₀ is non-zero.'],
+    even: ['E', '#38bdf8', 'Even signal', `f(−${v}) = f(${v}) → all bₙ = 0. Cosine series (plus DC).`],
+    odd: ['O', '#f472b6', 'Odd signal', `f(−${v}) = −f(${v}) → a₀ = 0 and all aₙ = 0. Sine series.`],
+    'odd-dc': ['O', '#f472b6', 'Odd + DC offset', `f(${v}) − a₀ is odd → all aₙ = 0 (n ≥ 1). Only sine terms plus the DC level.`],
+    hw: ['½', '#34d399', 'Half-wave symmetric', `f(${v} + T/2) = −f(${v}) → only odd harmonics n = 1, 3, 5, … appear.`],
+    'hw-dc': ['½', '#34d399', 'Half-wave symmetric (+ DC)', `Apart from its DC level, f(${v} + T/2) = −f(${v}) → only odd harmonics.`],
+    halfperiod: ['T/2', '#fbbf24', 'Really repeats every T/2', 'All odd harmonics vanish → the true fundamental period is T/2 (true ω₀ is twice as large).'],
+    none: ['∅', '#94a3b8', 'No even/odd symmetry', `Both aₙ and bₙ are needed. Shifting the signal along ${v} could make it even or odd, but it never changes |cₙ|.`]
+  };
+  let h = '';
+  for (const id of an.sym) { const [ic, col, t, d] = SYM[id]; h += `<div class="sym-chip"><span class="ico" style="background:${col}22;color:${col};border:1px solid ${col}55">${ic}</span><div><b>${t}</b><span>${d}</span></div></div>`; }
+  const dc = an.decay;
+  let dTitle = 'Coefficient decay', dText = '';
+  if (dc.type === 'none') dText = 'No harmonics at all (pure DC).';
+  else if (dc.type === 'finite') dText = `Only harmonics up to n = ${dc.last} are significant: the signal is band-limited, or so smooth that its spectrum dies out extremely fast.`;
+  else if (dc.type === 'fast') dText = 'The coefficients decay very fast, so the signal is very smooth.';
+  else {
+    const p = dc.p; dTitle = `Coefficients decay like 1/n^${p.toFixed(1)}`;
+    if (p < 1.5) dText = 'Typical of a signal with jump discontinuities (including a jump where one period meets the next). Expect Gibbs ringing and slow convergence.';
+    else if (p < 2.5) dText = 'Typical of a continuous signal with corners (its slope jumps). No Gibbs overshoot; convergence is uniform.';
+    else if (p < 3.5) dText = 'The slope is continuous but the curvature jumps. Very fast, smooth convergence.';
+    else dText = 'Very smooth signal. Few harmonics are enough.';
+  }
+  h += `<div class="sym-chip"><span class="ico" style="background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa55">∿</span><div><b>${dTitle}</b><span>${dText}</span></div></div>`;
+  const nj = m.jumps.length;
+  h += `<div class="sym-chip"><span class="ico" style="background:#38bdf822;color:#38bdf8;border:1px solid #38bdf855">⌁</span><div><b>${nj ? `${nj} jump${nj > 1 ? 's' : ''} per period` : 'Continuous periodic signal'}</b><span>${nj ? `At ${m.jumps.slice(0, 4).map(j => `${v} = ${plainNice(j.x)}`).join(', ')}${nj > 4 ? ', …' : ''}. There the series converges to the midpoint ${nj === 1 ? `(${C.fmtPlain((m.jumps[0].L + m.jumps[0].R) / 2, 4)})` : '(hollow dots)'}.` : 'No jumps, even where one period joins the next, so S_N converges uniformly.'}</span></div></div>`;
+  $('#analysis').innerHTML = h;
+}
+
+/* ---------------- table ---------------- */
+function buildTable() {
+  const m = app.model, rows = [], thr = 1e-9 * m.scale;
+  const cell = v => (v === 0 ? '<td class="z">0</td>' : `<td>${C.fmtPlain(v, 6)}</td>`);
+  for (let n = 0; n <= NMAX; n++) {
+    const a = m.A[n], b = n ? m.B[n] : 0, cr = n ? a / 2 : a, ci = n ? -b / 2 : 0, mag = Math.hypot(cr, ci);
+    const cS = (cr === 0 && ci === 0) ? '<td class="z">0</td>' : `<td>${C.fmtPlain(cr, 5)} ${ci < 0 ? '−' : '+'} j${C.fmtPlain(Math.abs(ci), 5)}</td>`;
+    const ph = mag > thr ? `<td>${C.fmtPlain(Math.atan2(ci, cr) * 180 / Math.PI, 5)}</td>` : '<td class="z">—</td>';
+    rows.push(`<tr><td>${n}</td>${cell(a)}${n ? cell(b) : '<td class="z">—</td>'}${cS}${cell(mag)}${cell(n ? 2 * mag : mag)}${ph}</tr>`);
+  }
+  $('#coefBody').innerHTML = rows.join('');
+}
+$('#btnCsv').addEventListener('click', () => {
+  const m = app.model; if (!m) return;
+  let csv = 'n,a_n,b_n,Re(c_n),Im(c_n),|c_n|,A_n,phase_deg\n';
+  for (let n = 0; n <= NMAX; n++) {
+    const a = m.A[n], b = n ? m.B[n] : 0, cr = n ? a / 2 : a, ci = n ? -b / 2 : 0, mag = Math.hypot(cr, ci);
+    csv += [n, a, b, cr, ci, mag, n ? 2 * mag : mag, mag > 0 ? Math.atan2(ci, cr) * 180 / Math.PI : ''].join(',') + '\n';
+  }
+  copyText(csv, 'Coefficient table copied as CSV (n = 0…500)');
+});
+
+/* ---------------- LTI filter ---------------- */
+const FLT_LATEX = {
+  none: 'H(j\\omega) = 1',
+  lpf1: 'H(j\\omega) = \\dfrac{1}{1 + j\\omega/\\omega_c}',
+  hpf1: 'H(j\\omega) = \\dfrac{j\\omega/\\omega_c}{1 + j\\omega/\\omega_c}',
+  lpf2: 'H(j\\omega) = \\dfrac{1}{1 - (\\omega/\\omega_c)^2 + j\\sqrt{2}\\,\\omega/\\omega_c}',
+  ilpf: 'H(j\\omega) = \\begin{cases}1 & |\\omega| \\le \\omega_c\\\\ 0 & |\\omega| > \\omega_c\\end{cases}',
+  ihpf: 'H(j\\omega) = \\begin{cases}0 & |\\omega| < \\omega_c\\\\ 1 & |\\omega| \\ge \\omega_c\\end{cases}',
+  diff: 'H(j\\omega) = j\\omega \\quad (y = f\')',
+  integ: 'H(j\\omega) = \\dfrac{1}{j\\omega} \\quad (\\text{DC blocked})',
+  delay: 'H(j\\omega) = e^{-j\\omega t_0}'
+};
+const FLT_NOTE = {
+  none: 'Pick a system to see how it reshapes each harmonic.',
+  lpf1: 'Harmonics above ω_c are attenuated by roughly 1/n (−20 dB/decade). Sharp edges get rounded, like an RC circuit charging and discharging.',
+  hpf1: 'Removes DC and attenuates low harmonics. The output keeps the edges but loses the flat parts.',
+  lpf2: 'Maximally flat passband, −40 dB/decade roll-off. It cleans up harmonics more aggressively than the 1st-order RC.',
+  ilpf: 'Passes harmonics with nω₀ ≤ ω_c unchanged and removes the rest, so the output is exactly the partial sum S_K with K = ⌊ω_c/ω₀⌋. Truncating a Fourier series is ideal low-pass filtering!',
+  ihpf: 'Removes DC and every harmonic below ω_c.',
+  diff: 'Multiplies cₙ by jnω₀: high harmonics are amplified. The derivative of a jump is an impulse, so its series does not converge.',
+  integ: 'Divides cₙ by jnω₀: high harmonics are suppressed (smoothing). The output is the running integral of f with its DC removed, e.g. square → triangle.',
+  delay: 'Every harmonic keeps its magnitude and gets a phase shift of −nω₀t₀ (linear phase). The output is just f shifted right by t₀, with no distortion.'
+};
+function filterParams() { const m = app.model; return { wc: app.filter.wcRatio * (m ? m.w0 : 1), t0: app.filter.t0 * (m ? m.T : 1) }; }
+function updateFilter(rerender = true) {
+  const m = app.model, f = app.filter;
+  const chip = $('#chips .chip[data-k="out"]');
+  chip.classList.toggle('disabled', f.type === 'none');
+  $('#ctrlWc').style.display = ['lpf1', 'hpf1', 'lpf2', 'ilpf', 'ihpf'].includes(f.type) ? '' : 'none';
+  $('#ctrlT0').style.display = f.type === 'delay' ? '' : 'none';
+  $('#wcVal').textContent = `${+f.wcRatio.toPrecision(3)} ω₀${m ? ' = ' + C.fmtPlain(f.wcRatio * m.w0, 4) : ''}`;
+  $('#t0Val').textContent = `${+f.t0.toFixed(3)} T${m ? ' = ' + C.fmtPlain(f.t0 * m.T, 4) : ''}`;
+  if (!m) return;
+  const p = filterParams();
+  app.flt = C.filterCoeffs(m, f.type, p);
+  app.flt.key = `${m.id}|${f.type}|${p.wc}|${p.t0}`;
+  if (rerender) { updateFilterLatex(); updateOutputPanel(); updateSpecNote(); updateAudio(); requestRender(); }
+}
+function updateFilterLatex() {
+  const f = app.filter, v = app.VAR;
+  tex($('#mFilter'), FLT_LATEX[f.type].replace(/t_0/g, v + '_0'), true);
+  $('#fltNote').textContent = FLT_NOTE[f.type];
+}
+function updateOutputPanel() {
+  const m = app.model, fl = app.flt; if (!m || !fl) return;
+  const v = app.VAR, arg = C.argSymbolic(C.niceParts(m.w0, 1e-9), v);
+  tex($('#mOutput'), `y(${v}) = \\sum_{n=-\\infty}^{\\infty} \\underbrace{H(jn\\omega_0)\\,c_n}_{d_n}\\, e^{j${arg}}`, true);
+  const ratio = m.power > 0 ? fl.power / m.power : 0;
+  $('#stOutP').textContent = C.fmtPlain(fl.power, 5);
+  $('#stOutPD').textContent = `${C.fmtPlain(100 * ratio, 4)}% of input power${app.filter.type === 'none' ? '' : ' (all harmonics)'}`;
+  const h = fl.H(m.w0), g = Math.hypot(h[0], h[1]);
+  $('#stOutG').textContent = `|H(jω₀)| = ${C.fmtPlain(g, 4)}`;
+  $('#stOutGD').textContent = `${g > 0 ? C.fmtPlain(20 * Math.log10(g), 3) + ' dB' : '−∞ dB'}, ∠H = ${C.fmtPlain(Math.atan2(h[1], h[0]) * 180 / Math.PI, 4)}°`;
+}
+$('#fltType').addEventListener('change', e => {
+  const was = app.filter.type; app.filter.type = e.target.value;
+  if (was === 'none' && app.filter.type !== 'none' && !app.show.out) { app.show.out = true; $('#chips .chip[data-k="out"]').classList.add('on'); }
+  updateFilter(); saveHashSoon();
+});
+$('#fltWc').addEventListener('input', e => { app.filter.wcRatio = Math.pow(10, +e.target.value); updateFilter(); });
+$('#fltT0').addEventListener('input', e => { app.filter.t0 = +e.target.value; updateFilter(); });
+
+/* ---------------- static KaTeX & variable-dependent text ---------------- */
+function renderStatic() {
+  $$('[data-tex]').forEach(el => {
+    if (!el.dataset.src) el.dataset.src = el.dataset.tex;
+    tex(el, el.dataset.src.replace(/@/g, app.VAR), el.hasAttribute('data-display'));
+  });
+  $('#titleMain').textContent = `Original f(${app.VAR})`;
+  $('#titleRight').textContent = `Fourier approximation`;
+}
+
+/* ---------------- share / hash ---------------- */
+function encodeState() {
+  const st = {
+    p: app.pieces.map(p => [p.fe.latex(), p.fa.latex(), p.fb.latex()]),
+    pm: app.periodMode, ps: periodField ? periodField.latex() : '', v: app.VAR, n: app.N, mx: app.Nmax,
+    f: app.filter.type, wc: app.filter.wcRatio, t0: app.filter.t0
+  };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(st))));
+}
+function decodeState(h) { try { return JSON.parse(decodeURIComponent(escape(atob(h)))); } catch (e) { return null; } }
+let hashTimer = null;
+function saveHashSoon() { clearTimeout(hashTimer); hashTimer = setTimeout(() => { try { history.replaceState(null, '', '#s=' + encodeState()); } catch (e) { /* file:// may block */ } }, 600); }
+$('#btnShare').addEventListener('click', () => {
+  const url = location.href.split('#')[0] + '#s=' + encodeState();
+  copyText(url, 'Link copied: it reproduces this exact signal and settings');
+});
+function copyText(s, msg) {
+  const ok = () => toast(msg);
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(s).then(ok, () => fallbackCopy(s, msg));
+  else fallbackCopy(s, msg);
+}
+function fallbackCopy(s, msg) {
+  const ta = document.createElement('textarea'); ta.value = s; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); toast(msg); } catch (e) { toast('Copy failed — please copy manually'); }
+  ta.remove();
+}
+let toastTimer = null;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
+
+/* ---------------- misc UI ---------------- */
+const openHelp = () => $('#helpModal').classList.add('show');
+$('#btnHelp').addEventListener('click', openHelp);
+$('#btnHelp2').addEventListener('click', openHelp);
+$('#helpClose').addEventListener('click', () => $('#helpModal').classList.remove('show'));
+$('#helpModal').addEventListener('click', e => { if (e.target.id === 'helpModal') $('#helpModal').classList.remove('show'); });
+$('#btnTheory').addEventListener('click', () => $('#theory').scrollIntoView({ behavior: 'smooth' }));
+$('#btnAddPiece').addEventListener('click', () => {
+  const last = app.pieces[app.pieces.length - 1];
+  let a = '';
+  if (last) a = last.fb.latex();
+  const p = addPiece({ e: '', a, b: '' }, true);
+  void p; clearPreset();
+});
+
+/* ---------------- init ---------------- */
+function init() {
+  const ds = document.createElement('style'); ds.id = 'dimStyle'; document.head.appendChild(ds);
+  plots.main = new Plot($('#cvMain'), $('#roMain'), 'main');
+  plots.right = new Plot($('#cvRight'), $('#roRight'), 'right');
+  buildPresetButtons();
+  renderStatic();
+  if (!MQ) renderStatus([{ type: 'warn', msg: 'The math editor (MathQuill) could not be loaded, probably because there is no internet connection. Plain-text input works too: e.g. x^2, sin(x), pi, abs(x), {x<0: -1, 1}.' }], []);
+  const m = /#s=([^&]+)/.exec(location.hash);
+  const st = m ? decodeState(m[1]) : null;
+  if (st && Array.isArray(st.p) && st.p.length) {
+    if (st.v === 't' || st.v === 'x') { app.VAR = st.v; $$('#varSeg button').forEach(x => x.classList.toggle('on', x.dataset.v === app.VAR)); }
+    setPieces(st.p);
+    setPeriodMode(st.pm === 'custom' ? 'custom' : 'auto', st.ps || '');
+    if (st.mx) { app.Nmax = +st.mx; $('#nMax').value = app.Nmax; nSlider.max = app.Nmax; }
+    if (st.n !== undefined) app.N = Math.min(+st.n, NMAX);
+    if (st.f && C.FILTERS[st.f]) { app.filter.type = st.f; $('#fltType').value = st.f; if (st.f !== 'none') { app.show.out = true; $('#chips .chip[data-k="out"]').classList.add('on'); } }
+    if (st.wc) { app.filter.wcRatio = +st.wc; $('#fltWc').value = Math.log10(+st.wc); }
+    if (st.t0 !== undefined) { app.filter.t0 = +st.t0; $('#fltT0').value = +st.t0; }
+    relabel(); renderStatic(); compute();
+  } else {
+    loadPreset('square');
+  }
+  updateFilter(false); updateFilterLatex();
+}
+init();
+})();
+</script>
+</body>
+</html>
